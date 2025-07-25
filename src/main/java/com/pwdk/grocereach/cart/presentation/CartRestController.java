@@ -6,7 +6,6 @@ import com.pwdk.grocereach.cart.presentation.dtos.CartItemResponse;
 import com.pwdk.grocereach.common.Response;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,8 +22,7 @@ public class CartRestController {
     }
 
     @GetMapping
-    public ResponseEntity<Response<List<CartItemResponse>>> getMyCartItems(Authentication auth) {
-        UUID userId = getUserId(auth);
+    public ResponseEntity<Response<List<CartItemResponse>>> getMyCartItems(@RequestParam UUID userId) {
         List<CartItemResponse> items = cartService.getCartItems(userId);
         return Response.successfulResponse("Cart items fetched successfully", items);
     }
@@ -32,9 +30,8 @@ public class CartRestController {
     @PostMapping
     public ResponseEntity<Response<CartItemResponse>> addItemToCart(
             @Valid @RequestBody CartItemRequest request,
-            Authentication auth
+            @RequestParam UUID userId
     ) {
-        UUID userId = getUserId(auth);
         CartItemResponse item = cartService.addCartItem(userId, request);
         return Response.successfulResponse("Item added to cart successfully", item);
     }
@@ -62,9 +59,5 @@ public class CartRestController {
         List<UUID> cartItemIds = body.get("cartItemIds");
         cartService.deleteMultiple(cartItemIds);
         return Response.successfulResponse("Multiple cart items deleted successfully");
-    }
-
-    private UUID getUserId(Authentication auth) {
-        return UUID.fromString(auth.getName());
     }
 }
