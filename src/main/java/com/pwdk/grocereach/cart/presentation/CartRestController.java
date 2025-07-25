@@ -3,6 +3,7 @@ package com.pwdk.grocereach.cart.presentation;
 import com.pwdk.grocereach.cart.application.CartService;
 import com.pwdk.grocereach.cart.presentation.dtos.CartItemRequest;
 import com.pwdk.grocereach.cart.presentation.dtos.CartItemResponse;
+import com.pwdk.grocereach.common.Response;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,42 +23,45 @@ public class CartRestController {
     }
 
     @GetMapping
-    public ResponseEntity<List<CartItemResponse>> getMyCartItems(Authentication auth) {
+    public ResponseEntity<Response<List<CartItemResponse>>> getMyCartItems(Authentication auth) {
         UUID userId = getUserId(auth);
-        return ResponseEntity.ok(cartService.getCartItems(userId));
+        List<CartItemResponse> items = cartService.getCartItems(userId);
+        return Response.successfulResponse("Cart items fetched successfully", items);
     }
 
     @PostMapping
-    public ResponseEntity<CartItemResponse> addItemToCart(
+    public ResponseEntity<Response<CartItemResponse>> addItemToCart(
             @Valid @RequestBody CartItemRequest request,
             Authentication auth
     ) {
         UUID userId = getUserId(auth);
-        return ResponseEntity.ok(cartService.addCartItem(userId, request));
+        CartItemResponse item = cartService.addCartItem(userId, request);
+        return Response.successfulResponse("Item added to cart successfully", item);
     }
 
     @PatchMapping("/{cartItemId}")
-    public ResponseEntity<CartItemResponse> updateCartItemQuantity(
+    public ResponseEntity<Response<CartItemResponse>> updateCartItemQuantity(
             @PathVariable UUID cartItemId,
             @RequestBody Map<String, Integer> payload
     ) {
         Integer quantity = payload.get("quantity");
-        return ResponseEntity.ok(cartService.updateQuantity(cartItemId, quantity));
+        CartItemResponse updatedItem = cartService.updateQuantity(cartItemId, quantity);
+        return Response.successfulResponse("Cart item quantity updated successfully", updatedItem);
     }
 
     @DeleteMapping("/{cartItemId}")
-    public ResponseEntity<Void> deleteCartItem(@PathVariable UUID cartItemId) {
+    public ResponseEntity<Response<Void>> deleteCartItem(@PathVariable UUID cartItemId) {
         cartService.deleteItem(cartItemId);
-        return ResponseEntity.noContent().build();
+        return Response.successfulResponse("Cart item deleted successfully");
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> deleteMultipleCartItems(
+    public ResponseEntity<Response<Void>> deleteMultipleCartItems(
             @RequestBody Map<String, List<UUID>> body
     ) {
         List<UUID> cartItemIds = body.get("cartItemIds");
         cartService.deleteMultiple(cartItemIds);
-        return ResponseEntity.noContent().build();
+        return Response.successfulResponse("Multiple cart items deleted successfully");
     }
 
     private UUID getUserId(Authentication auth) {
