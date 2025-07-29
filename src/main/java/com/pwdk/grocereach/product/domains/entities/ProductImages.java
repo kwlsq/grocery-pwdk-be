@@ -12,6 +12,7 @@ import java.util.UUID;
 @Setter
 @Getter
 @Builder
+@Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "product_image")
