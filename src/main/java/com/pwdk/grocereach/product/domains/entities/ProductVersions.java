@@ -1,0 +1,83 @@
+package com.pwdk.grocereach.product.domains.entities;
+
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import org.hibernate.annotations.Filter;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+@Data
+@Setter
+@Getter
+@Builder
+@Entity
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "product_version")
+@Filter(name = "deletedAtNull", condition = "deleted_at is null")
+public class ProductVersions {
+  @Id
+  @GeneratedValue
+  @Column(name = "id", updatable = false, nullable = false)
+  private UUID id;
+
+  @NotNull
+  @Column(name = "price")
+  private BigDecimal price;
+
+  @NotNull
+  @Column(name = "weight")
+  private BigDecimal weight;
+
+  @NotNull
+  @Column(name = "stock")
+  private Integer stock;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "product_id", nullable = false)
+  private Product product;
+
+  @NotNull
+  @Column(name = "version_number")
+  private Integer versionNumber;
+
+  @NotNull
+  @Column(name = "change_reason")
+  private String changeReason;
+
+  @NotNull
+  @Column(name = "effective_from")
+  private Instant effectiveFrom;
+
+  @NotNull
+  @Column(name = "effective_to")
+  private Instant effectiveTo;
+
+  @Column(name = "created_at")
+  private Instant createdAt;
+
+  @Column(name = "updated_at")
+  private Instant updatedAt;
+
+  @Column(name = "deleted")
+  private Instant deletedAt;
+
+  @PrePersist
+  public void prePersist() {
+    this.createdAt = Instant.now();
+    this.updatedAt = Instant.now();
+  }
+
+  @PreUpdate
+  public void preUpdate() {
+    this.updatedAt = Instant.now();
+  }
+
+  @PreRemove
+  public void preRemove() {
+    this.deletedAt = Instant.now();
+  }
+}
