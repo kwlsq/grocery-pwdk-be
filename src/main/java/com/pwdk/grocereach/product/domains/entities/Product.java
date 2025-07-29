@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.Filter;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -29,6 +30,10 @@ public class Product {
   @NotNull
   @Column(name = "description")
   private String description;
+
+  @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  @JoinColumn(name = "current_version_id", referencedColumnName = "id")
+  private ProductVersions currentVersion;
 
   @NotNull
   @Column(name = "is_active")
