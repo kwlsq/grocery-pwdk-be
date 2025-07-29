@@ -1,18 +1,22 @@
 package com.pwdk.grocereach.product.applications.impl;
 
+import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductVersions;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductVersionRepository;
+import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -44,7 +48,7 @@ public class ProductServiceImplementation implements ProductService {
         .stock(request.getStock())
         .weight(request.getWeight())
         .effectiveFrom(Instant.now())
-        .versionNumber(1)
+        .versionNumber(1) // set to become first version
         .build();
     productVersionRepository.save(versions);
 
@@ -55,10 +59,17 @@ public class ProductServiceImplementation implements ProductService {
   }
 
   @Override
-  public List<ProductResponse> getAllProducts() {
-    return productRepository.findAll().stream()
-        .map(ProductResponse::from)
-        .toList();
+  public PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, Integer category) {
+    Page<Product> page = productRepository.findAll(ProductSpecification.getFilteredProduct(search,category), pageable).map(product -> product);
+
+    List<ProductResponse> productResponses = new ArrayList<>();
+
+    page.getContent().forEach(product -> {
+      ProductResponse response = ProductResponse.from(product);
+      productResponses.add(response); // save the product response to list
+    });
+
+    return PaginatedResponse.Utils.from(page, productResponses);
   }
 
   @Override
@@ -93,7 +104,7 @@ public class ProductServiceImplementation implements ProductService {
   @Override
   public void deleteProduct(UUID id) {
     Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found!"));
-    product.setDeletedAt(Instant.now());
+    product.setDeletedAt(Instant.now()); // Soft delete
     productRepository.save(product);
   }
 }
