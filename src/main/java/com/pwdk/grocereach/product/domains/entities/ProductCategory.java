@@ -4,11 +4,15 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
-@Data
+@Filter(name = "deletedAtNull", condition = "deleted_at is Null")
+@FilterDef(name = "deletedAtNull")
 @Setter
 @Getter
 @Builder
@@ -16,12 +20,21 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "product_category")
-@Filter(name = "deletedAtNull", condition = "deleted_at is Null")
-public class ProductCategories {
+public class ProductCategory {
   @Id
   @GeneratedValue
   @Column(name = "id", updatable = false, nullable = false)
   private UUID id;
+
+  @ManyToOne
+  @JoinColumn(name = "parent_id")
+  private ProductCategory parent;
+
+  @OneToMany(mappedBy = "parent")
+  private List<ProductCategory> children;
+
+  @OneToMany(mappedBy = "category")
+  private List<Product> products = new ArrayList<>();
 
   @NotNull
   @Column(name = "name")
@@ -33,7 +46,7 @@ public class ProductCategories {
   @Column(name = "updated_at")
   private Instant updatedAt;
 
-  @Column(name = "deleted")
+  @Column(name = "deleted_at")
   private Instant deletedAt;
 
   @PrePersist

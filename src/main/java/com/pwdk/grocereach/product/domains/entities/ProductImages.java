@@ -8,7 +8,6 @@ import org.hibernate.annotations.Filter;
 import java.time.Instant;
 import java.util.UUID;
 
-@Data
 @Setter
 @Getter
 @Builder
@@ -28,7 +27,7 @@ public class ProductImages {
   private String imageUrl;
 
   @NotNull
-  @Column(name = "isPrimary")
+  @Column(name = "is_primary")
   private boolean isPrimary;
 
   @Column(name = "created_at")

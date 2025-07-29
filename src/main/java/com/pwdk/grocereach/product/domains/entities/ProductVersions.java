@@ -9,7 +9,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
-@Data
 @Setter
 @Getter
 @Builder
@@ -52,7 +51,6 @@ public class ProductVersions {
   @Column(name = "effective_from")
   private Instant effectiveFrom;
 
-  @NotNull
   @Column(name = "effective_to")
   private Instant effectiveTo;
 
@@ -62,7 +60,7 @@ public class ProductVersions {
   @Column(name = "updated_at")
   private Instant updatedAt;
 
-  @Column(name = "deleted")
+  @Column(name = "deleted_at")
   private Instant deletedAt;
 
   @PrePersist

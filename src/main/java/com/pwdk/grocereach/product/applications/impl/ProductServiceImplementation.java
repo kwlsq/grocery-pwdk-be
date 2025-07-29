@@ -3,7 +3,9 @@ package com.pwdk.grocereach.product.applications.impl;
 import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.domains.entities.Product;
+import com.pwdk.grocereach.product.domains.entities.ProductCategory;
 import com.pwdk.grocereach.product.domains.entities.ProductVersions;
+import com.pwdk.grocereach.product.infrastructures.repositories.ProductCategoryRepository;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductVersionRepository;
 import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
@@ -24,20 +26,28 @@ public class ProductServiceImplementation implements ProductService {
 
   private final ProductRepository productRepository;
   private final ProductVersionRepository productVersionRepository;
+  private final ProductCategoryRepository productCategoryRepository;
 
-  public ProductServiceImplementation (ProductRepository productRepository, ProductVersionRepository productVersionRepository) {
+  public ProductServiceImplementation (ProductRepository productRepository, ProductVersionRepository productVersionRepository, ProductCategoryRepository productCategoryRepository) {
     this.productRepository = productRepository;
     this.productVersionRepository = productVersionRepository;
+    this.productCategoryRepository = productCategoryRepository;
   }
 
   @Override
   public ProductResponse createProduct(CreateProductRequest request) {
+
+    UUID categoryUUID = UUID.fromString(request.getCategoryID()); // get UUID from categoryID string
+
+//    Find the category
+    ProductCategory category = productCategoryRepository.findById(categoryUUID).orElseThrow(() -> new RuntimeException("Category not found!"));
 
 //    Create product first & save to DB *without product version
     Product product = Product.builder()
         .name(request.getName())
         .description(request.getDescription())
         .isActive(true)
+        .category(category)
         .build();
     productRepository.save(product);
 
@@ -47,8 +57,9 @@ public class ProductServiceImplementation implements ProductService {
         .price(request.getPrice())
         .stock(request.getStock())
         .weight(request.getWeight())
-        .effectiveFrom(Instant.now())
         .versionNumber(1) // set to become first version
+        .changeReason("New product") // for creating new product
+        .effectiveFrom(Instant.now())
         .build();
     productVersionRepository.save(versions);
 
@@ -82,19 +93,33 @@ public class ProductServiceImplementation implements ProductService {
   public ProductResponse updateProduct(UUID id, UpdateProductRequest request) {
     Product currentProduct = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found!"));
 
+    ProductVersions currentVersion = currentProduct.getCurrentVersion();
+
     //    Create new product version
     ProductVersions newVersion = ProductVersions.builder()
         .product(currentProduct)
-        .price(request.getPrice())
-        .stock(request.getStock())
-        .weight(request.getWeight())
-        .effectiveFrom(Instant.now())
+        .price(request.getPrice() != null ? request.getPrice() : currentVersion.getPrice())
+        .stock(request.getStock() != null ? request.getStock() : currentVersion.getStock())
+        .weight(request.getWeight() != null ? request.getWeight() : currentVersion.getWeight())
         .versionNumber(currentProduct.getCurrentVersion().getVersionNumber() + 1)
+        .changeReason(request.getChangeReason() != null ? request.getChangeReason() : "Changed by API endpoint!")
+        .effectiveFrom(Instant.now())
         .build();
     productVersionRepository.save(newVersion);
 
+//    Set effective to for unused version to now
+    currentVersion.setEffectiveTo(Instant.now());
+
     currentProduct.setCurrentVersion(newVersion);
     currentProduct.setUpdatedAt(Instant.now());
+
+//    If product's category is changed
+    if (request.getCategoryID() != null) {
+      UUID categoriUUID = UUID.fromString(request.getCategoryID());
+      ProductCategory category = productCategoryRepository.findById(categoriUUID).orElseThrow(() -> new RuntimeException("Category not found!"));
+
+      currentProduct.setCategory(category);
+    }
 
     productRepository.save(currentProduct); // Save updated product
 

@@ -6,10 +6,8 @@ import lombok.*;
 import org.hibernate.annotations.Filter;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
-@Data
 @Setter
 @Getter
 @Builder
@@ -36,6 +34,10 @@ public class Product {
   @JoinColumn(name = "current_version_id", referencedColumnName = "id")
   private ProductVersions currentVersion;
 
+  @ManyToOne
+  @JoinColumn(name = "category_id")
+  private ProductCategory category;
+
   @NotNull
   @Column(name = "is_active")
   private boolean isActive;
@@ -46,7 +48,7 @@ public class Product {
   @Column(name = "updated_at")
   private Instant updatedAt;
 
-  @Column(name = "deleted")
+  @Column(name = "deleted_at")
   private Instant deletedAt;
 
   @PrePersist

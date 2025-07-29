@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @NoArgsConstructor
@@ -15,4 +16,6 @@ public class UpdateProductRequest {
   private BigDecimal price;
   private BigDecimal weight;
   private Integer stock;
+  private String changeReason;
+  private String categoryID;
 }
