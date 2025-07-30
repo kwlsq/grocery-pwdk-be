@@ -25,11 +25,12 @@ public class ProductRestController {
   @GetMapping
   public ResponseEntity<?> getAllProducts(@RequestParam(value = "page", defaultValue = "0") int page,
                                           @RequestParam(value = "size", defaultValue = "10") int size,
-                                          @RequestParam(value = "sort", defaultValue = "id") String sort,
+                                          @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+                                          @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection,
                                           @RequestParam(value = "search", defaultValue = "") String search,
                                           @RequestParam(value = "category", defaultValue = "") Integer category
                                           ) {
-    Pageable pageable = PageRequest.of(page, size, Sort.by(getSortOrder(sort)));
+    Pageable pageable = PageRequest.of(page, size, Sort.by(getSortOrder(sortBy, sortDirection)));
 
     return Response.successfulResponse(
         "Products fetched successfully",
@@ -55,7 +56,7 @@ public class ProductRestController {
   }
 
   @PatchMapping("/update/{id}")
-  public ResponseEntity<?> updateProduct(@PathVariable String id, UpdateProductRequest request) {
+  public ResponseEntity<?> updateProduct(@PathVariable String id,@RequestBody UpdateProductRequest request) {
     UUID uuid = UUID.fromString(id);
     return Response.successfulResponse(
         "Update product successful",
@@ -63,14 +64,7 @@ public class ProductRestController {
     );
   }
 
-
-
-  private Sort.Order getSortOrder(String sort) {
-    String[] sortParts = sort.split(",");
-    String property = sortParts[0];
-    Sort.Direction direction = sortParts.length > 1 && "desc".equalsIgnoreCase(sortParts[1])
-        ? Sort.Direction.DESC
-        : Sort.Direction.ASC;
-    return Sort.Order.by(property).with(direction);
+  private Sort.Order getSortOrder(String sortBy, String sortDirection) {
+    return Sort.Order.by(sortBy).with(Sort.Direction.fromString(sortDirection));
   }
 }

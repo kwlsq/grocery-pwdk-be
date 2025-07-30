@@ -22,6 +22,10 @@ public class ProductImages {
   @Column(name = "id", updatable = false, nullable = false)
   private UUID id;
 
+  @ManyToOne
+  @JoinColumn(name = "product_id")
+  private Product product;
+
   @NotNull
   @Column(name = "image_url")
   private String imageUrl;

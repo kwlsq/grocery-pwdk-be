@@ -6,6 +6,8 @@ import lombok.*;
 import org.hibernate.annotations.Filter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Setter
@@ -33,6 +35,9 @@ public class Product {
   @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   @JoinColumn(name = "current_version_id", referencedColumnName = "id")
   private ProductVersions currentVersion;
+
+  @OneToMany(mappedBy = "product")
+  private List<ProductImages> productImages = new ArrayList<>();
 
   @ManyToOne
   @JoinColumn(name = "category_id")

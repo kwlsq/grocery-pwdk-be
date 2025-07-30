@@ -94,6 +94,8 @@ public class ProductServiceImplementation implements ProductService {
     Product currentProduct = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found!"));
 
     ProductVersions currentVersion = currentProduct.getCurrentVersion();
+    System.out.println(request.getPrice());
+    System.out.println(request.getStock());
 
     //    Create new product version
     ProductVersions newVersion = ProductVersions.builder()
