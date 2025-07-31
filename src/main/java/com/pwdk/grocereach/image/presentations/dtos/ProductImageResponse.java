@@ -1,4 +1,4 @@
-package com.pwdk.grocereach.product.presentations.dtos;
+package com.pwdk.grocereach.image.presentations.dtos;
 
 import com.pwdk.grocereach.image.domains.entities.ProductImages;
 import lombok.AllArgsConstructor;

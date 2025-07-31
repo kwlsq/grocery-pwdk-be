@@ -1,6 +1,6 @@
-package com.pwdk.grocereach.product.infrastructures.repositories;
+package com.pwdk.grocereach.image.infrastructures.repositories;
 
-import com.pwdk.grocereach.product.domains.entities.ProductImages;
+import com.pwdk.grocereach.image.domains.entities.ProductImages;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

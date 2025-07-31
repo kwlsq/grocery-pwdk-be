@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.product.domains.entities;
 
+import com.pwdk.grocereach.image.domains.entities.ProductImages;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
