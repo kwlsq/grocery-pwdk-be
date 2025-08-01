@@ -33,7 +33,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager; // For login
     private final TokenGeneratorService tokenGeneratorService;
     private final JwtDecoder refreshTokenDecoder;
-    private final UserService userService;// For login
+    private final UserService userService;
 
     @Override
     public User register(RegisterRequest request) {
