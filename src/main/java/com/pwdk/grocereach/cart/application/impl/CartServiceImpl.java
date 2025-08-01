@@ -2,8 +2,8 @@ package com.pwdk.grocereach.cart.application.impl;
 
 import com.pwdk.grocereach.cart.application.CartService;
 import com.pwdk.grocereach.cart.domain.entities.CartItems;
-import com.pwdk.grocereach.cart.domain.entities.Product;
-import com.pwdk.grocereach.cart.domain.entities.User;
+import com.pwdk.grocereach.product.domains.entities.Product;
+import com.pwdk.grocereach.Auth.Domain.Entities.User;
 import com.pwdk.grocereach.cart.infrastructure.repository.CartRepository;
 import com.pwdk.grocereach.cart.infrastructure.repository.ProductRepository;
 import com.pwdk.grocereach.cart.infrastructure.repository.UserRepository;
@@ -45,6 +45,31 @@ public class CartServiceImpl implements CartService {
     public CartItemResponse addCartItem(UUID userId, CartItemRequest request) {
         User user = userRepository.findById(userId).orElseThrow();
         Product product = productRepository.findById(request.productId()).orElseThrow();
+        
+        
+        // Get all cart items for this user and find the one with the same product
+        List<CartItems> userCartItems = cartRepository.findAllByUserAndDeletedAtIsNull(user);
+        
+        // Find existing cart item with the same product
+        CartItems existingCartItem = null;
+        for (CartItems item : userCartItems) {
+            if (item.getProduct().getId().equals(request.productId())) {
+                existingCartItem = item;
+                break;
+            }
+        }
+        
+        if (existingCartItem != null) {
+            
+            // Update the quantity of the existing cart item
+            int oldQuantity = existingCartItem.getQuantity();
+            int newQuantity = oldQuantity + request.quantity();
+            existingCartItem.setQuantity(newQuantity);
+            cartRepository.save(existingCartItem);
+            return toResponse(existingCartItem);
+        }
+        
+        // Create a new cart item if the product doesn't exist in the cart
         CartItems cartItem = CartItems.builder()
                 .user(user)
                 .product(product)
