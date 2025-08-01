@@ -1,8 +1,8 @@
 package com.pwdk.grocereach.cart.infrastructure.repository;
 
 import com.pwdk.grocereach.cart.domain.entities.CartItems;
-import com.pwdk.grocereach.cart.domain.entities.User;
-import com.pwdk.grocereach.cart.domain.entities.Product;
+import com.pwdk.grocereach.Auth.Domain.Entities.User;
+import com.pwdk.grocereach.product.domains.entities.Product;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -16,6 +16,11 @@ public interface CartRepository extends JpaRepository<CartItems, UUID>, JpaSpeci
     List<CartItems> findAllByUserAndDeletedAtIsNull(User user);
 
     boolean existsByUserAndProductAndDeletedAtIsNull(User user, Product product);
+
+    CartItems findByUserAndProductAndDeletedAtIsNull(User user, Product product);
+    
+    // Alternative method using product ID instead of Product entity
+    CartItems findByUserAndProduct_IdAndDeletedAtIsNull(User user, UUID productId);
 
     void deleteAllByIdIn(List<UUID> ids);
 }

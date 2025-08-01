@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/cart-items")
+@RequestMapping("/api/v1/cart-items")
 public class CartRestController {
     private final CartService cartService;
 
