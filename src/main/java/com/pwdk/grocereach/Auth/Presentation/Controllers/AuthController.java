@@ -2,8 +2,11 @@ package com.pwdk.grocereach.Auth.Presentation.Controllers;
 
 import com.pwdk.grocereach.Auth.Application.Services.AuthService;
 import com.pwdk.grocereach.Auth.Presentation.Dto.*;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
@@ -25,7 +28,6 @@ public class AuthController {
         }
     }
 
-
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody VerifyRequest request) {
         try {
@@ -35,33 +37,79 @@ public class AuthController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) { // No longer need HttpServletResponse here
         try {
-            LoginResponse response = authService.login(request);
-            return ResponseEntity.ok(response);
-        } catch (IllegalStateException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+            LoginResponse loginResponse = authService.login(request);
+
+            ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", loginResponse.getAccessToken().getValue())
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .maxAge(15 * 60) // 15 minutes
+                    .sameSite("Lax")
+                    .build();
+
+            ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .maxAge(30 * 24 * 60 * 60) // 30 days
+                    .sameSite("Lax")
+                    .build();
+
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                    .body("Login successful.");
+
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid email or password.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {
         try {
-            LoginResponse response = authService.refreshToken(request);
-            return ResponseEntity.ok(response);
+            LoginResponse loginResponse = authService.refreshToken(request);
+
+            ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", loginResponse.getAccessToken().getValue())
+                    .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Lax").build();
+
+            ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
+                    .httpOnly(true).secure(false).path("/").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                    .body("Token refreshed successfully.");
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token.");
         }
     }
+
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestBody RefreshTokenRequest request) {
-        try {
+    public ResponseEntity<?> logout(@RequestBody(required = false) RefreshTokenRequest request) { // Make body optional
+        // Invalidate the token on the backend
+        if (request != null && request.getRefreshToken() != null) {
             authService.logout(request);
-            return ResponseEntity.ok("User logged out successfully.");
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred during logout.");
         }
+
+        // Create expired cookies to clear them from the browser
+        ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", "")
+                .httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax").build();
+
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax").build();
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
+                .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                .body("User logged out successfully.");
     }
 }
