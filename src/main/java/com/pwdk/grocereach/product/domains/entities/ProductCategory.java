@@ -4,32 +4,41 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
-@Data
+@Filter(name = "deletedAtNull", condition = "deleted_at is Null")
+@FilterDef(name = "deletedAtNull")
 @Setter
 @Getter
 @Builder
 @Entity
-@AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "product_image")
-@Filter(name = "deletedAtNull", condition = "deleted_at is null")
-public class ProductImages {
+@AllArgsConstructor
+@Table(name = "product_category")
+public class ProductCategory {
   @Id
   @GeneratedValue
   @Column(name = "id", updatable = false, nullable = false)
   private UUID id;
 
-  @NotNull
-  @Column(name = "image_url")
-  private String imageUrl;
+  @ManyToOne
+  @JoinColumn(name = "parent_id")
+  private ProductCategory parent;
+
+  @OneToMany(mappedBy = "parent")
+  private List<ProductCategory> children;
+
+  @OneToMany(mappedBy = "category")
+  private List<Product> products = new ArrayList<>();
 
   @NotNull
-  @Column(name = "isPrimary")
-  private boolean isPrimary;
+  @Column(name = "name")
+  private String name;
 
   @Column(name = "created_at")
   private Instant createdAt;
@@ -37,7 +46,7 @@ public class ProductImages {
   @Column(name = "updated_at")
   private Instant updatedAt;
 
-  @Column(name = "deleted")
+  @Column(name = "deleted_at")
   private Instant deletedAt;
 
   @PrePersist

@@ -7,7 +7,6 @@ import org.hibernate.annotations.Filter;
 import java.time.Instant;
 import java.util.UUID;
 
-@Data
 @Setter
 @Getter
 @Builder
@@ -25,7 +24,7 @@ public class ProductPromotions {
   @Column(name = "created_at")
   private Instant createdAt;
 
-  @Column(name = "deleted")
+  @Column(name = "deleted_at")
   private Instant deletedAt;
 
   @PrePersist
