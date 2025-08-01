@@ -17,7 +17,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name="cart_items")
+@Table(name="cart_items", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"user_id", "product_id"})
+})
 @Filter(name = "deletedAtFilter", condition = "deleted_at is null")
 public class CartItems {
     @Id

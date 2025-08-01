@@ -17,5 +17,10 @@ public interface CartRepository extends JpaRepository<CartItems, UUID>, JpaSpeci
 
     boolean existsByUserAndProductAndDeletedAtIsNull(User user, Product product);
 
+    CartItems findByUserAndProductAndDeletedAtIsNull(User user, Product product);
+    
+    // Alternative method using product ID instead of Product entity
+    CartItems findByUserAndProduct_IdAndDeletedAtIsNull(User user, UUID productId);
+
     void deleteAllByIdIn(List<UUID> ids);
 }
