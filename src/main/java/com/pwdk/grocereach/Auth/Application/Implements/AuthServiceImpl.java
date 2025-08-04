@@ -48,7 +48,8 @@ public class AuthServiceImpl implements AuthService {
         newUser.setEmail(request.getEmail());
         newUser.setFullName(request.getFullName());
         newUser.setVerified(false);
-        newUser.setPassword(null);
+        String randomPassword = UUID.randomUUID().toString();
+        newUser.setPassword(passwordEncoder.encode(randomPassword));
         User savedUser = userRepository.save(newUser);
 
         String token = UUID.randomUUID().toString();
@@ -95,13 +96,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginResponse refreshToken(RefreshTokenRequest request) {
-        Jwt decodedRefreshToken = refreshTokenDecoder.decode(request.getRefreshToken());
+    public LoginResponse refreshToken(String refreshToken) {
+        Jwt decodedRefreshToken = refreshTokenDecoder.decode(refreshToken);
         String email = decodedRefreshToken.getSubject();
 
         String redisKey = "refresh_token:" + email;
         String tokenFromRedis = redisTemplate.opsForValue().get(redisKey);
-        if (tokenFromRedis == null || !tokenFromRedis.equals(request.getRefreshToken())) {
+        if (tokenFromRedis == null || !tokenFromRedis.equals(refreshToken)) {
             throw new IllegalStateException("Invalid refresh token.");
         }
 
@@ -119,10 +120,29 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void logout(RefreshTokenRequest request) {
-        Jwt decodedRefreshToken = refreshTokenDecoder.decode(request.getRefreshToken());
-        String email = decodedRefreshToken.getSubject();
-        String redisKey = "refresh_token:" + email;
-        redisTemplate.delete(redisKey);
+    public void logout(String refreshToken) {
+        try {
+            Jwt decodedRefreshToken = refreshTokenDecoder.decode(refreshToken);
+            String email = decodedRefreshToken.getSubject();
+            String redisKey = "refresh_token:" + email;
+            redisTemplate.delete(redisKey);
+        } catch (Exception e) {
+
+        }
+    }
+    @Override
+    public void resendVerification(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalStateException("User with this email does not exist."));
+
+        if (user.isVerified()) {
+            throw new IllegalStateException("This account has already been verified.");
+        }
+
+        String token = UUID.randomUUID().toString();
+        String redisKey = "verification_token:" + token;
+        redisTemplate.opsForValue().set(redisKey, user.getId().toString(), 1, TimeUnit.HOURS);
+
+        emailService.sendVerificationEmail(user.getEmail(), token);
     }
 }

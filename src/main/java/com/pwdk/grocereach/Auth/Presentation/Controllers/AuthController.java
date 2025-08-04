@@ -1,7 +1,9 @@
 package com.pwdk.grocereach.Auth.Presentation.Controllers;
 
 import com.pwdk.grocereach.Auth.Application.Services.AuthService;
+import com.pwdk.grocereach.Auth.Infrastructure.Securities.CookieUtil;
 import com.pwdk.grocereach.Auth.Presentation.Dto.*;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -10,6 +12,8 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -54,7 +58,7 @@ public class AuthController {
             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
                     .httpOnly(true)
                     .secure(false)
-                    .path("/")
+                    .path("/api/auth")
                     .maxAge(30 * 24 * 60 * 60) // 30 days
                     .sameSite("Lax")
                     .build();
@@ -73,19 +77,22 @@ public class AuthController {
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {
+    public ResponseEntity<?> refreshToken(HttpServletRequest request) {
+        String refreshToken = CookieUtil.getCookieValue(request, "refreshToken")
+                .orElseThrow(() -> new IllegalArgumentException("Refresh token not found in cookie."));
+
         try {
-            LoginResponse loginResponse = authService.refreshToken(request);
+            LoginResponse loginResponse = authService.refreshToken(refreshToken);
 
             ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", loginResponse.getAccessToken().getValue())
                     .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Lax").build();
 
-            ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
-                    .httpOnly(true).secure(false).path("/").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
+            ResponseCookie newRefreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
+                    .httpOnly(true).secure(false).path("/api/auth").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
-                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, newRefreshTokenCookie.toString())
                     .body("Token refreshed successfully.");
 
         } catch (Exception e) {
@@ -94,22 +101,24 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestBody(required = false) RefreshTokenRequest request) { // Make body optional
-        // Invalidate the token on the backend
-        if (request != null && request.getRefreshToken() != null) {
-            authService.logout(request);
-        }
+    public ResponseEntity<?> logout(HttpServletRequest request) {
+        CookieUtil.getCookieValue(request, "refreshToken").ifPresent(authService::logout);
 
-        // Create expired cookies to clear them from the browser
-        ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", "")
-                .httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax").build();
-
-        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "")
-                .httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax").build();
+        ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", "").httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax").build();
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "").httpOnly(true).secure(false).path("/api/auth").maxAge(0).sameSite("Lax").build();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                 .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
                 .body("User logged out successfully.");
+    }
+    @PostMapping("/resend-verification")
+    public ResponseEntity<?> resendVerification(@RequestBody Map<String, String> payload) {
+        try {
+            authService.resendVerification(payload.get("email"));
+            return ResponseEntity.ok("A new verification email has been sent. Please check your inbox.");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
