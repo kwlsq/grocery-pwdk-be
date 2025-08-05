@@ -64,6 +64,13 @@ public class ProductRestController {
     );
   }
 
+  @DeleteMapping("/delete/{id}")
+  public ResponseEntity<?> deleteProduct(@PathVariable String id) {
+    UUID uuid = UUID.fromString(id);
+    productService.deleteProduct(uuid);
+    return Response.successfulResponse("Delete product success!");
+  }
+
   private Sort.Order getSortOrder(String sortBy, String sortDirection) {
     return Sort.Order.by(sortBy).with(Sort.Direction.fromString(sortDirection));
   }

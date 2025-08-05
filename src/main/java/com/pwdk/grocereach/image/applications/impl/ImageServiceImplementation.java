@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.image.applications.impl;
 
+import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.image.applications.CloudinaryService;
 import com.pwdk.grocereach.image.applications.ImageService;
 import com.pwdk.grocereach.image.domains.entities.ProductImages;
@@ -29,7 +30,7 @@ public class ImageServiceImplementation implements ImageService {
 
   @Override
   public ProductImageResponse uploadSingleImage(MultipartFile file, UUID productID, boolean isPrimary) {
-    Product product = productRepository.findById(productID).orElseThrow(() -> new RuntimeException("Product not found!"));
+    Product product = productRepository.findById(productID).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
 
     String url = cloudinaryService.uploadFile(file, "product-image");
 
@@ -50,7 +51,7 @@ public class ImageServiceImplementation implements ImageService {
       throw  new RuntimeException("There are no file to upload!");
     }
 
-    Product product = productRepository.findById(productID).orElseThrow(() -> new RuntimeException("Product not found!"));
+    Product product = productRepository.findById(productID).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
 
     List<ProductImageResponse> productImageResponseList = new ArrayList<>();
 

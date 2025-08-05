@@ -1,6 +1,7 @@
 package com.pwdk.grocereach.product.applications.impl;
 
 import com.pwdk.grocereach.common.PaginatedResponse;
+import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductCategory;
@@ -40,7 +41,7 @@ public class ProductServiceImplementation implements ProductService {
     UUID categoryUUID = UUID.fromString(request.getCategoryID()); // get UUID from categoryID string
 
 //    Find the category
-    ProductCategory category = productCategoryRepository.findById(categoryUUID).orElseThrow(() -> new RuntimeException("Category not found!"));
+    ProductCategory category = productCategoryRepository.findById(categoryUUID).orElseThrow(() -> new ProductNotFoundException("Category not found!"));
 
 //    Create product first & save to DB *without product version
     Product product = Product.builder()
@@ -85,13 +86,13 @@ public class ProductServiceImplementation implements ProductService {
 
   @Override
   public ProductResponse getProductByID(UUID id) {
-    Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found!"));
+    Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
     return ProductResponse.from(product);
   }
 
   @Override
   public ProductResponse updateProduct(UUID id, UpdateProductRequest request) {
-    Product currentProduct = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found!"));
+    Product currentProduct = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
 
     ProductVersions currentVersion = currentProduct.getCurrentVersion();
     System.out.println(request.getPrice());
@@ -118,7 +119,7 @@ public class ProductServiceImplementation implements ProductService {
 //    If product's category is changed
     if (request.getCategoryID() != null) {
       UUID categoriUUID = UUID.fromString(request.getCategoryID());
-      ProductCategory category = productCategoryRepository.findById(categoriUUID).orElseThrow(() -> new RuntimeException("Category not found!"));
+      ProductCategory category = productCategoryRepository.findById(categoriUUID).orElseThrow(() -> new ProductNotFoundException("Category not found!"));
 
       currentProduct.setCategory(category);
     }
@@ -130,7 +131,7 @@ public class ProductServiceImplementation implements ProductService {
 
   @Override
   public void deleteProduct(UUID id) {
-    Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found!"));
+    Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
     product.setDeletedAt(Instant.now()); // Soft delete
     productRepository.save(product);
   }
