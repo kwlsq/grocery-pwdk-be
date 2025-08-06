@@ -1,4 +1,4 @@
-package com.pwdk.grocereach.product.domains.entities;
+package com.pwdk.grocereach.store.domains.entities;
 
 import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 import jakarta.persistence.*;
@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.Filter;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -17,43 +16,35 @@ import java.util.UUID;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "product_version")
-@Filter(name = "deletedAtNull", condition = "deleted_at is null")
-public class ProductVersions {
+@Table(name = "warehouses")
+@Filter(name = "deletedAtNull", condition = "deleted_at is Null")
+public class Warehouse {
   @Id
   @GeneratedValue
   @Column(name = "id", updatable = false, nullable = false)
   private UUID id;
 
   @NotNull
-  @Column(name = "price")
-  private BigDecimal price;
+  @Column(name = "name")
+  private String name;
 
   @NotNull
-  @Column(name = "weight")
-  private BigDecimal weight;
+  @Column(name = "address")
+  private String address;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "product_id", nullable = false)
-  private Product product;
+  @NotNull
+  @Column(name = "latitude")
+  private double latitude;
 
-  @OneToMany(mappedBy = "productVersion", cascade = CascadeType.ALL)
+  @NotNull
+  @Column(name = "longitude")
+  private double longitude;
+
+  @Column(name = "is_active")
+  private boolean isActive;
+
+  @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL)
   private List<Inventory> inventories;
-
-  @NotNull
-  @Column(name = "version_number")
-  private Integer versionNumber;
-
-  @NotNull
-  @Column(name = "change_reason")
-  private String changeReason;
-
-  @NotNull
-  @Column(name = "effective_from")
-  private Instant effectiveFrom;
-
-  @Column(name = "effective_to")
-  private Instant effectiveTo;
 
   @Column(name = "created_at")
   private Instant createdAt;

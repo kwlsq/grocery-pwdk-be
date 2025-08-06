@@ -56,7 +56,6 @@ public class ProductServiceImplementation implements ProductService {
     ProductVersions versions = ProductVersions.builder()
         .product(product)
         .price(request.getPrice())
-        .stock(request.getStock())
         .weight(request.getWeight())
         .versionNumber(1) // set to become first version
         .changeReason("New product") // for creating new product
@@ -102,7 +101,6 @@ public class ProductServiceImplementation implements ProductService {
     ProductVersions newVersion = ProductVersions.builder()
         .product(currentProduct)
         .price(request.getPrice() != null ? request.getPrice() : currentVersion.getPrice())
-        .stock(request.getStock() != null ? request.getStock() : currentVersion.getStock())
         .weight(request.getWeight() != null ? request.getWeight() : currentVersion.getWeight())
         .versionNumber(currentProduct.getCurrentVersion().getVersionNumber() + 1)
         .changeReason(request.getChangeReason() != null ? request.getChangeReason() : "Changed by API endpoint!")
