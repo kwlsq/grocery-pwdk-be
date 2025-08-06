@@ -1,35 +1,59 @@
 package com.pwdk.grocereach.Auth.Application.Implements;
 
 import com.pwdk.grocereach.Auth.Application.Services.EmailService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
 
+    @Autowired
+    public EmailServiceImpl(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
+    }
+
     @Override
     public void sendVerificationEmail(String to, String token) {
-        String subject = "Grocereach Email Verification";
-        String verificationLink = "http://localhost:3000/verify?token=" + token;
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
-        String body = "Hello,\n\n"
-                + "Please verify your Grocereach account by clicking the link below:\n"
-                + verificationLink + "\n\n"
-                + "This link will expire in 1 hour.\n\n"
-                + "Regards,\n"
-                + "Grocereach Team";
+            helper.setTo(to);
+            helper.setSubject("Verify Your Grocereach Account");
+            String verificationUrl = "http://localhost:3000/verify/" + token;
+            String htmlMsg = "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>"
+                    + "<div style='max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>"
+                    + "<h2 style='color: #059669;'>Welcome to Grocereach!</h2>"
+                    + "<p>Thank you for registering. Please click the button below to verify your email address and set your password.</p>"
+                    + "<p>This link is valid for 1 hour.</p>"
+                    + "<a href='" + verificationUrl + "' "
+                    + "style='"
+                    + "display: inline-block; "
+                    + "padding: 12px 24px; "
+                    + "margin: 20px 0; "
+                    + "font-size: 16px; "
+                    + "font-weight: bold; "
+                    + "color: #ffffff; "
+                    + "background-color: #10B981; "
+                    + "text-decoration: none; "
+                    + "border-radius: 5px;"
+                    + "'>"
+                    + "Verify Account"
+                    + "</a>"
+                    + "<p>If you did not create an account, no further action is required.</p>"
+                    + "</div>"
+                    + "</body>";
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
-        message.setFrom("noreply@grocereach.com");
+            helper.setText(htmlMsg, true);
 
-        mailSender.send(message);
+            mailSender.send(message);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send verification email", e);
+        }
     }
 }

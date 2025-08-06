@@ -1,9 +1,9 @@
-package com.pwdk.grocereach.Auth.Domain.Entities;
+package com.pwdk.grocereach.User.Domain.Entities;
+import com.pwdk.grocereach.Auth.Domain.Entities.User;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 
 @Entity

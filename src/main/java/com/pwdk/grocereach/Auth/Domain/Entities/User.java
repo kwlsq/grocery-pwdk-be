@@ -70,7 +70,7 @@ public class User {
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
-    @Column(name = "password",nullable = true)
+    @Column(name = "password",nullable = false)
     private String password;
 }
 
