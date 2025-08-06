@@ -21,7 +21,7 @@ public class EmailServiceImpl implements EmailService {
     public void sendVerificationEmail(String to, String token) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8"); 
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
 
             helper.setTo(to);
             helper.setSubject("Verify Your Grocereach Account");
