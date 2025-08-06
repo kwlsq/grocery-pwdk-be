@@ -37,6 +37,9 @@ public class CartItems {
     @Column(nullable = false)
     private int quantity;
 
+    @Column(name = "is_selected", nullable = false)
+    private boolean isSelected = true;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

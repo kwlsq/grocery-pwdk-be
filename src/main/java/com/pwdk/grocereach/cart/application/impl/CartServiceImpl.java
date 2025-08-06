@@ -43,43 +43,19 @@ public class CartServiceImpl implements CartService {
         Product product = productRepository.findById(request.productId())
                 .orElseThrow(() -> new RuntimeException("Product not found with ID: " + request.productId()));
         
-        // Debug: Check if any existing item has the same product ID
-        boolean foundMatchingProduct = allUserCartItems.stream()
-                .anyMatch(item -> item.getProduct().getId().equals(request.productId()));
-        
-        // Try to find existing cart item for this user and product (method 1)
+        // Try to find existing cart item for this user and product
         CartItems existingCartItem = cartRepository.findByUserAndProductAndDeletedAtIsNull(user, product);
         
-        // Try alternative method using product ID
+        // Try alternative method using product ID if the first method didn't work
         if (existingCartItem == null) {
             existingCartItem = cartRepository.findByUserAndProduct_IdAndDeletedAtIsNull(user, request.productId());
         }
-        
-        // Also try the exists method
-        boolean productExists = cartRepository.existsByUserAndProductAndDeletedAtIsNull(user, product);
         
         if (existingCartItem != null) {
             // Update the quantity of the existing cart item
             int newQuantity = existingCartItem.getQuantity() + request.quantity();
             existingCartItem.setQuantity(newQuantity);
             CartItems savedItem = cartRepository.save(existingCartItem);
-            return toResponse(savedItem);
-        }
-        
-        // Fallback: If the repository method didn't work, try manual search
-        CartItems manualExistingItem = allUserCartItems.stream()
-                .filter(item -> {
-                    boolean matches = item.getProduct().getId().equals(request.productId());
-                    return matches;
-                })
-                .findFirst()
-                .orElse(null);
-        
-        if (manualExistingItem != null) {
-            // Update the quantity of the existing cart item
-            int newQuantity = manualExistingItem.getQuantity() + request.quantity();
-            manualExistingItem.setQuantity(newQuantity);
-            CartItems savedItem = cartRepository.save(manualExistingItem);
             return toResponse(savedItem);
         }
         
