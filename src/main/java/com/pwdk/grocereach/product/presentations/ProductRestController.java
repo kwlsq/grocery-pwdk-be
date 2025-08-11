@@ -50,6 +50,14 @@ public class ProductRestController {
     );
   }
 
+  @GetMapping("/public/categories")
+  public ResponseEntity<?> getAllCategories() {
+    return Response.successfulResponse(
+        "Categories fetched successfully!",
+        productService.getAllCategories()
+    );
+  }
+
   @PostMapping("/create")
   public ResponseEntity<?> createProduct(@RequestBody CreateProductRequest request) {
     return Response.successfulResponse(

@@ -12,6 +12,7 @@ import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepositor
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductVersionRepository;
 import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
+import com.pwdk.grocereach.product.presentations.dtos.ProductCategoryResponse;
 import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
 import org.springframework.data.domain.Page;
@@ -160,6 +161,13 @@ public class ProductServiceImplementation implements ProductService {
     Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
     product.setDeletedAt(Instant.now()); // Soft delete
     productRepository.save(product);
+  }
+
+  @Override
+  public List<ProductCategoryResponse> getAllCategories() {
+    return productCategoryRepository.findAll().stream()
+        .map(ProductCategoryResponse::from)
+        .toList();
   }
 
   private double haversine(double lat1, double lon1, double lat2, double lon2) {
