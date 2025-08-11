@@ -7,8 +7,10 @@ import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.util.UUID;
+
 public class ProductSpecification {
-  public static Specification<Product> searchByKeyword(String keyword,Integer category) {
+  public static Specification<Product> searchByKeyword(String keyword,UUID category) {
     return (Root<Product> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
 
       Predicate keywordPredicate = cb.conjunction();
@@ -35,7 +37,7 @@ public class ProductSpecification {
     };
   }
 
-  public static Specification<Product> getFilteredProduct(String searchText, Integer category) {
+  public static Specification<Product> getFilteredProduct(String searchText, UUID category) {
     return isNotDeleted().and(searchByKeyword(searchText, category));
   }
 }

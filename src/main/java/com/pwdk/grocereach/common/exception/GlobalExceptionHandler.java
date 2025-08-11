@@ -14,4 +14,11 @@ public class GlobalExceptionHandler {
         Response.failedResponse("Product not found!")
     );
   }
+
+  @ExceptionHandler(MissingParameterException.class)
+  public ResponseEntity<?> handleMissingParameter(MissingParameterException e) {
+    return ResponseEntity.badRequest().body(
+        Response.failedResponse(e.getMessage())
+    );
+  }
 }

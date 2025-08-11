@@ -1,6 +1,7 @@
 package com.pwdk.grocereach.product.applications.impl;
 
 import com.pwdk.grocereach.common.PaginatedResponse;
+import com.pwdk.grocereach.common.exception.MissingParameterException;
 import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.domains.entities.Product;
@@ -70,8 +71,19 @@ public class ProductServiceImplementation implements ProductService {
   }
 
   @Override
-  public PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, Integer category, double userLatitude, double userLongitude, double maxDistanceKM) {
-    Page<Product> page = productRepository.findAll(ProductSpecification.getFilteredProduct(search,category), pageable).map(product -> product);
+  public PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, String category, double userLatitude, double userLongitude, double maxDistanceKM) {
+
+    UUID categoryID = null;
+
+    if (category != null && !category.trim().isEmpty()) {
+      categoryID = UUID.fromString(category);
+    }
+
+    if (userLatitude == 0 || userLongitude == 0) {
+      throw new MissingParameterException("User geolocation is required!");
+    }
+
+    Page<Product> page = productRepository.findAll(ProductSpecification.getFilteredProduct(search,categoryID), pageable).map(product -> product);
 
     List<ProductResponse> filteredResponses = page.getContent().stream()
         .map(product -> {

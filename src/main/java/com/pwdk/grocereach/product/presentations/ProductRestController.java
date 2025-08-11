@@ -22,15 +22,15 @@ public class ProductRestController {
     this.productService = productService;
   }
 
-  @GetMapping
+  @GetMapping("/public")
   public ResponseEntity<?> getAllProducts(@RequestParam(value = "page", defaultValue = "0") int page,
                                           @RequestParam(value = "size", defaultValue = "10") int size,
                                           @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
                                           @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection,
                                           @RequestParam(value = "search", defaultValue = "") String search,
-                                          @RequestParam(value = "category", defaultValue = "") Integer category,
-                                          @RequestParam(value = "userLatitude", defaultValue = "") double userLatitude,
-                                          @RequestParam(value = "userLongitude", defaultValue = "") double userLongitude,
+                                          @RequestParam(value = "category", defaultValue = "") String category,
+                                          @RequestParam(value = "userLatitude", defaultValue = "0") double userLatitude,
+                                          @RequestParam(value = "userLongitude", defaultValue = "0") double userLongitude,
                                           @RequestParam(value = "maxDistanceKM", defaultValue = "10") double maxDistanceKM
                                           ) {
     Pageable pageable = PageRequest.of(page, size, Sort.by(getSortOrder(sortBy, sortDirection)));
@@ -41,7 +41,7 @@ public class ProductRestController {
     );
   }
 
-  @GetMapping("/{id}")
+  @GetMapping("/public/{id}")
   public ResponseEntity<?> getProductByID(@PathVariable String id) {
     UUID uuid = UUID.fromString(id);
     return Response.successfulResponse(

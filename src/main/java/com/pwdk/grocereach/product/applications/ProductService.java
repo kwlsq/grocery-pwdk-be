@@ -11,7 +11,7 @@ import java.util.UUID;
 
 public interface ProductService {
   ProductResponse createProduct(CreateProductRequest request);
-  PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, Integer category, double userLatitude, double userLongitude, double maxDistanceKM);
+  PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, String category, double userLatitude, double userLongitude, double maxDistanceKM);
   ProductResponse getProductByID(UUID id);
   ProductResponse updateProduct(UUID id, UpdateProductRequest request);
   void deleteProduct(UUID id);
