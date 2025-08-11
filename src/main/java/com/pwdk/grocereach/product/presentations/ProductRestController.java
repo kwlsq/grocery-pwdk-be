@@ -28,13 +28,16 @@ public class ProductRestController {
                                           @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
                                           @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection,
                                           @RequestParam(value = "search", defaultValue = "") String search,
-                                          @RequestParam(value = "category", defaultValue = "") Integer category
+                                          @RequestParam(value = "category", defaultValue = "") Integer category,
+                                          @RequestParam(value = "userLatitude", defaultValue = "") double userLatitude,
+                                          @RequestParam(value = "userLongitude", defaultValue = "") double userLongitude,
+                                          @RequestParam(value = "maxDistanceKM", defaultValue = "10") double maxDistanceKM
                                           ) {
     Pageable pageable = PageRequest.of(page, size, Sort.by(getSortOrder(sortBy, sortDirection)));
 
     return Response.successfulResponse(
         "Products fetched successfully",
-        productService.getAllProducts(pageable, search, category)
+        productService.getAllProducts(pageable, search, category, userLatitude, userLongitude, maxDistanceKM)
     );
   }
 

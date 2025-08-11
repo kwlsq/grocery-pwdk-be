@@ -70,17 +70,33 @@ public class ProductServiceImplementation implements ProductService {
   }
 
   @Override
-  public PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, Integer category) {
+  public PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, Integer category, double userLatitude, double userLongitude, double maxDistanceKM) {
     Page<Product> page = productRepository.findAll(ProductSpecification.getFilteredProduct(search,category), pageable).map(product -> product);
 
-    List<ProductResponse> productResponses = new ArrayList<>();
+    List<ProductResponse> filteredResponses = page.getContent().stream()
+        .map(product -> {
+          ProductResponse response = ProductResponse.from(product);
 
-    page.getContent().forEach(product -> {
-      ProductResponse response = ProductResponse.from(product);
-      productResponses.add(response); // save the product response to list
-    });
+          // Filter inventories by distance
+          var filteredInventories = response.getProductVersionResponse().getInventories().stream()
+              .filter(inv -> {
+                double dist = haversine(
+                    userLatitude,
+                    userLongitude,
+                    inv.getWarehouseLatitude(),
+                    inv.getWarehouseLongitude()
+                );
+                return dist <= maxDistanceKM;
+              })
+              .toList();
 
-    return PaginatedResponse.Utils.from(page, productResponses);
+          response.getProductVersionResponse().setInventories(filteredInventories);
+          return response;
+        })
+        .filter(resp -> !resp.getProductVersionResponse().getInventories().isEmpty()) // remove products out of range
+        .toList();
+
+    return PaginatedResponse.Utils.from(page, filteredResponses);
   }
 
   @Override
@@ -132,5 +148,16 @@ public class ProductServiceImplementation implements ProductService {
     Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
     product.setDeletedAt(Instant.now()); // Soft delete
     productRepository.save(product);
+  }
+
+  private double haversine(double lat1, double lon1, double lat2, double lon2) {
+    final int R = 6371; // km
+    double latDistance = Math.toRadians(lat2 - lat1);
+    double lonDistance = Math.toRadians(lon2 - lon1);
+    double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+        + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+        * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   }
 }
