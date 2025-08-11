@@ -28,13 +28,16 @@ public class ProductRestController {
                                           @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
                                           @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection,
                                           @RequestParam(value = "search", defaultValue = "") String search,
-                                          @RequestParam(value = "category", defaultValue = "") Integer category
+                                          @RequestParam(value = "category", defaultValue = "") Integer category,
+                                          @RequestParam(value = "userLatitude", defaultValue = "") double userLatitude,
+                                          @RequestParam(value = "userLongitude", defaultValue = "") double userLongitude,
+                                          @RequestParam(value = "maxDistanceKM", defaultValue = "10") double maxDistanceKM
                                           ) {
     Pageable pageable = PageRequest.of(page, size, Sort.by(getSortOrder(sortBy, sortDirection)));
 
     return Response.successfulResponse(
         "Products fetched successfully",
-        productService.getAllProducts(pageable, search, category)
+        productService.getAllProducts(pageable, search, category, userLatitude, userLongitude, maxDistanceKM)
     );
   }
 
@@ -62,6 +65,13 @@ public class ProductRestController {
         "Update product successful",
         productService.updateProduct(uuid, request)
     );
+  }
+
+  @DeleteMapping("/delete/{id}")
+  public ResponseEntity<?> deleteProduct(@PathVariable String id) {
+    UUID uuid = UUID.fromString(id);
+    productService.deleteProduct(uuid);
+    return Response.successfulResponse("Delete product success!");
   }
 
   private Sort.Order getSortOrder(String sortBy, String sortDirection) {

@@ -1,6 +1,7 @@
 package com.pwdk.grocereach.product.applications.impl;
 
 import com.pwdk.grocereach.common.PaginatedResponse;
+import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductCategory;
@@ -40,7 +41,7 @@ public class ProductServiceImplementation implements ProductService {
     UUID categoryUUID = UUID.fromString(request.getCategoryID()); // get UUID from categoryID string
 
 //    Find the category
-    ProductCategory category = productCategoryRepository.findById(categoryUUID).orElseThrow(() -> new RuntimeException("Category not found!"));
+    ProductCategory category = productCategoryRepository.findById(categoryUUID).orElseThrow(() -> new ProductNotFoundException("Category not found!"));
 
 //    Create product first & save to DB *without product version
     Product product = Product.builder()
@@ -55,7 +56,6 @@ public class ProductServiceImplementation implements ProductService {
     ProductVersions versions = ProductVersions.builder()
         .product(product)
         .price(request.getPrice())
-        .stock(request.getStock())
         .weight(request.getWeight())
         .versionNumber(1) // set to become first version
         .changeReason("New product") // for creating new product
@@ -70,28 +70,44 @@ public class ProductServiceImplementation implements ProductService {
   }
 
   @Override
-  public PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, Integer category) {
+  public PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, Integer category, double userLatitude, double userLongitude, double maxDistanceKM) {
     Page<Product> page = productRepository.findAll(ProductSpecification.getFilteredProduct(search,category), pageable).map(product -> product);
 
-    List<ProductResponse> productResponses = new ArrayList<>();
+    List<ProductResponse> filteredResponses = page.getContent().stream()
+        .map(product -> {
+          ProductResponse response = ProductResponse.from(product);
 
-    page.getContent().forEach(product -> {
-      ProductResponse response = ProductResponse.from(product);
-      productResponses.add(response); // save the product response to list
-    });
+          // Filter inventories by distance
+          var filteredInventories = response.getProductVersionResponse().getInventories().stream()
+              .filter(inv -> {
+                double dist = haversine(
+                    userLatitude,
+                    userLongitude,
+                    inv.getWarehouseLatitude(),
+                    inv.getWarehouseLongitude()
+                );
+                return dist <= maxDistanceKM;
+              })
+              .toList();
 
-    return PaginatedResponse.Utils.from(page, productResponses);
+          response.getProductVersionResponse().setInventories(filteredInventories);
+          return response;
+        })
+        .filter(resp -> !resp.getProductVersionResponse().getInventories().isEmpty()) // remove products out of range
+        .toList();
+
+    return PaginatedResponse.Utils.from(page, filteredResponses);
   }
 
   @Override
   public ProductResponse getProductByID(UUID id) {
-    Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found!"));
+    Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
     return ProductResponse.from(product);
   }
 
   @Override
   public ProductResponse updateProduct(UUID id, UpdateProductRequest request) {
-    Product currentProduct = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found!"));
+    Product currentProduct = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
 
     ProductVersions currentVersion = currentProduct.getCurrentVersion();
     System.out.println(request.getPrice());
@@ -101,7 +117,6 @@ public class ProductServiceImplementation implements ProductService {
     ProductVersions newVersion = ProductVersions.builder()
         .product(currentProduct)
         .price(request.getPrice() != null ? request.getPrice() : currentVersion.getPrice())
-        .stock(request.getStock() != null ? request.getStock() : currentVersion.getStock())
         .weight(request.getWeight() != null ? request.getWeight() : currentVersion.getWeight())
         .versionNumber(currentProduct.getCurrentVersion().getVersionNumber() + 1)
         .changeReason(request.getChangeReason() != null ? request.getChangeReason() : "Changed by API endpoint!")
@@ -118,7 +133,7 @@ public class ProductServiceImplementation implements ProductService {
 //    If product's category is changed
     if (request.getCategoryID() != null) {
       UUID categoriUUID = UUID.fromString(request.getCategoryID());
-      ProductCategory category = productCategoryRepository.findById(categoriUUID).orElseThrow(() -> new RuntimeException("Category not found!"));
+      ProductCategory category = productCategoryRepository.findById(categoriUUID).orElseThrow(() -> new ProductNotFoundException("Category not found!"));
 
       currentProduct.setCategory(category);
     }
@@ -130,8 +145,19 @@ public class ProductServiceImplementation implements ProductService {
 
   @Override
   public void deleteProduct(UUID id) {
-    Product product = productRepository.findById(id).orElseThrow(() -> new RuntimeException("Product not found!"));
+    Product product = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
     product.setDeletedAt(Instant.now()); // Soft delete
     productRepository.save(product);
+  }
+
+  private double haversine(double lat1, double lon1, double lat2, double lon2) {
+    final int R = 6371; // km
+    double latDistance = Math.toRadians(lat2 - lat1);
+    double lonDistance = Math.toRadians(lon2 - lon1);
+    double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+        + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+        * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
   }
 }
