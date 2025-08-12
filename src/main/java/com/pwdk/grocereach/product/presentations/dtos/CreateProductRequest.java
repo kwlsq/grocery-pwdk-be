@@ -28,9 +28,6 @@ public class CreateProductRequest {
   @NotNull(message = "Weight is required")
   private BigDecimal weight;
 
-  @NotNull(message = "Stock is required")
-  private Integer stock;
-
   @NotBlank(message = "Category ID is required")
   private String categoryID;
 }
