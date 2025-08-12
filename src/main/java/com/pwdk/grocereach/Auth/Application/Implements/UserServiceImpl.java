@@ -6,10 +6,12 @@ import com.pwdk.grocereach.Auth.Infrastructure.Repositories.UserRepository;
 import com.pwdk.grocereach.Auth.Infrastructure.Securities.CustomUserDetails;
 import com.pwdk.grocereach.Auth.Presentation.Dto.UserResponse;
 import com.pwdk.grocereach.User.Presentation.Dto.UpdateProfileRequest;
+import com.pwdk.grocereach.image.applications.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
@@ -18,6 +20,7 @@ import java.util.UUID;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final CloudinaryService cloudinaryService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -27,14 +30,22 @@ public class UserServiceImpl implements UserService {
         return new CustomUserDetails(user);
     }
     @Override
-    public UserResponse updateUserProfile(String email, UpdateProfileRequest request) {
-        User user = userRepository.findByEmail(email)
+    public UserResponse updateUserProfile(String userId, UpdateProfileRequest request, MultipartFile profileImage) {
+        User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setFullName(request.getFullName());
+        if (request.getFullName() != null && !request.getFullName().isEmpty()) {
+            user.setFullName(request.getFullName());
+        }
+        if (profileImage != null && !profileImage.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadFile(profileImage, "user_profiles");
+            if (imageUrl != null) {
+                user.setPhotoUrl(imageUrl);
+            }
+        }
         User updatedUser = userRepository.save(user);
         return new UserResponse(updatedUser);
     }
+
     @Override
     public UserDetails loadUserById(UUID id) {
         User user = userRepository.findById(id)

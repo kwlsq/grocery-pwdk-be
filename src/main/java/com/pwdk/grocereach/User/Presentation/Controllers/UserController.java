@@ -12,9 +12,11 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.UUID;
@@ -63,10 +65,17 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/me")
-    public ResponseEntity<UserResponse> updateUserProfile(Authentication authentication, @Valid @RequestBody UpdateProfileRequest request) {
-        String userEmail = ((CustomUserDetails) userService.loadUserById(UUID.fromString(authentication.getName()))).getUser().getEmail();
-        UserResponse updatedUser = userService.updateUserProfile(userEmail, request);
+    @PatchMapping(value = "/me", consumes = "multipart/form-data")
+    @PreAuthorize("hasRole('CUSTOMER')")
+    public ResponseEntity<UserResponse> updateUserProfile(
+            Authentication authentication,
+            @RequestPart(value = "request", required = false) UpdateProfileRequest request,
+            @RequestPart(value = "profileImage", required = false) MultipartFile profileImage) {
+
+        String userId = authentication.getName();
+        UpdateProfileRequest profileRequest = (request != null) ? request : new UpdateProfileRequest();
+
+        UserResponse updatedUser = userService.updateUserProfile(userId, profileRequest, profileImage);
         return ResponseEntity.ok(updatedUser);
     }
 }
