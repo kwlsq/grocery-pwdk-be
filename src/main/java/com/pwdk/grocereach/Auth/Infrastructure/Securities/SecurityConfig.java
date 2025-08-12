@@ -66,7 +66,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.decoder(jwtDecoder()))
-                        .bearerTokenResolver(bearerTokenResolver()) // <-- ADD THIS
+                        .bearerTokenResolver(bearerTokenResolver())
                 )
                 .build();
     }

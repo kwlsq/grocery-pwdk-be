@@ -4,11 +4,12 @@ import com.pwdk.grocereach.Auth.Presentation.Dto.UserResponse;
 import com.pwdk.grocereach.User.Presentation.Dto.UpdateProfileRequest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.UUID;
 
 public interface UserService extends UserDetailsService {
-    UserResponse updateUserProfile(String email, UpdateProfileRequest request);
+    UserResponse updateUserProfile(String userId, UpdateProfileRequest request, MultipartFile profileImage);
     UserDetails loadUserById(UUID id);
 
 }

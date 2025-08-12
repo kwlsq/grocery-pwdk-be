@@ -9,8 +9,10 @@ public interface AuthService {
     void verifyAccount(VerifyRequest request);
     LoginResponse login(LoginRequest request);
     LoginResponse refreshToken(String refreshToken);
-    void logout(String refreshToken);
+    void logout(String userId);
     void resendVerification(String email);
+    void requestPasswordReset(String email);
+    void confirmPasswordReset(String token, String newPassword);
 
 }
 
