@@ -21,4 +21,11 @@ public class GlobalExceptionHandler {
         Response.failedResponse(e.getMessage())
     );
   }
+
+  @ExceptionHandler(CategoryNotFoundException.class)
+  public ResponseEntity<?> handleCategoryNotFound(CategoryNotFoundException e) {
+    return ResponseEntity.status(404).body(
+        Response.failedResponse("Category not found!")
+    );
+  }
 }

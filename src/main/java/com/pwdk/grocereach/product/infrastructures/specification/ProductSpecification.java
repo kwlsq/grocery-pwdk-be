@@ -23,7 +23,7 @@ public class ProductSpecification {
       }
 
       if (category != null) {
-        Predicate categoryPredicate = cb.equal(root.get("category_id").get("id"), category);
+        Predicate categoryPredicate = cb.equal(root.get("category").get("id"), category);
         return cb.and(keywordPredicate, categoryPredicate);
       }
 
