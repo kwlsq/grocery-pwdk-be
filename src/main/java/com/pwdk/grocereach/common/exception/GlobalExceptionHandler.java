@@ -28,4 +28,11 @@ public class GlobalExceptionHandler {
         Response.failedResponse("Category not found!")
     );
   }
+
+  @ExceptionHandler(ProductAlreadyExistException.class)
+  public ResponseEntity<?> handleProductAlreadyExist(ProductAlreadyExistException e) {
+    return ResponseEntity.status(404).body(
+        Response.failedResponse("Product with the same name already exist!")
+    );
+  }
 }

@@ -2,6 +2,7 @@ package com.pwdk.grocereach.product.applications.impl;
 
 import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.common.exception.MissingParameterException;
+import com.pwdk.grocereach.common.exception.ProductAlreadyExistException;
 import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.domains.entities.Product;
@@ -22,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -44,6 +46,13 @@ public class ProductServiceImplementation implements ProductService {
 
 //    Find the category
     ProductCategory category = productCategoryRepository.findById(categoryUUID).orElseThrow(() -> new ProductNotFoundException("Category not found!"));
+
+//    Find existing product by name
+    Optional<Product> productOptional = productRepository.findByName(request.getName());
+
+    if (productOptional.isPresent()) {
+      throw new ProductAlreadyExistException("Product with the same name already exist!");
+    }
 
 //    Create product first & save to DB *without product version
     Product product = Product.builder()

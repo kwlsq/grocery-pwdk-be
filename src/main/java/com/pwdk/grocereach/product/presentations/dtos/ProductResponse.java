@@ -24,9 +24,9 @@ public class ProductResponse {
         product.getName(),
         product.getDescription(),
         ProductVersionResponse.from(product.getCurrentVersion()),
-        product.getProductImages().stream()
+        product.getProductImages() != null ? product.getProductImages().stream()
             .map(ProductImageResponse::from)
-            .toList()
+            .toList() : null
     );
   }
 }
