@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.store.domains.entities;
 
+import com.pwdk.grocereach.product.domains.entities.Product;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
@@ -25,6 +26,9 @@ public class Stores {
 
   @OneToMany(mappedBy = "store")
   private List<Warehouse> warehouses = new ArrayList<>();
+
+  @OneToMany(mappedBy = "store")
+  private List<Product> products = new ArrayList<>();
 
   @Column(name = "store_name")
   private String storeName;

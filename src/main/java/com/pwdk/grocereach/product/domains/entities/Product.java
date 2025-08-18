@@ -1,6 +1,7 @@
 package com.pwdk.grocereach.product.domains.entities;
 
 import com.pwdk.grocereach.image.domains.entities.ProductImages;
+import com.pwdk.grocereach.store.domains.entities.Stores;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -28,6 +29,10 @@ public class Product {
   @NotNull
   @Column(name = "name")
   private String name;
+
+  @ManyToOne
+  @JoinColumn(name = "store_id")
+  private Stores store;
 
   @NotNull
   @Column(name = "description")

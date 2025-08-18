@@ -10,7 +10,7 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.UUID;
 
 public class ProductSpecification {
-  public static Specification<Product> searchByKeyword(String keyword,UUID category) {
+  public static Specification<Product> searchByKeyword(String keyword,UUID category, UUID storeID) {
     return (Root<Product> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
 
       Predicate keywordPredicate = cb.conjunction();
@@ -27,6 +27,11 @@ public class ProductSpecification {
         return cb.and(keywordPredicate, categoryPredicate);
       }
 
+      if (storeID != null) {
+        Predicate categoryPredicate = cb.equal(root.get("store").get("id"), storeID);
+        return cb.and(keywordPredicate, categoryPredicate);
+      }
+
       return keywordPredicate;
     };
   }
@@ -37,7 +42,7 @@ public class ProductSpecification {
     };
   }
 
-  public static Specification<Product> getFilteredProduct(String searchText, UUID category) {
-    return isNotDeleted().and(searchByKeyword(searchText, category));
+  public static Specification<Product> getFilteredProduct(String searchText, UUID category, UUID storeID) {
+    return isNotDeleted().and(searchByKeyword(searchText, category, storeID));
   }
 }

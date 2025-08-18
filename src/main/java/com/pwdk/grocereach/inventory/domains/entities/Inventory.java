@@ -34,6 +34,9 @@ public class Inventory {
   @JoinColumn(name = "product_version_id")
   private ProductVersions productVersion;
 
+  @Column(name = "journal")
+  private String journal;
+
   @Column(name = "created_at")
   private Instant createdAt;
 

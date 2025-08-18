@@ -50,6 +50,24 @@ public class ProductRestController {
     );
   }
 
+  @GetMapping("/admin/{id}")
+  public ResponseEntity<?> getProductsByStoreID(@PathVariable String id,
+                                                @RequestParam(value = "page", defaultValue = "0") int page,
+                                                @RequestParam(value = "size", defaultValue = "10") int size,
+                                                @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+                                                @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection,
+                                                @RequestParam(value = "search", defaultValue = "") String search,
+                                                @RequestParam(value = "category", defaultValue = "") String category) {
+
+    Pageable pageable = PageRequest.of(page, size, Sort.by(getSortOrder(sortBy, sortDirection)));
+
+    UUID uuid = UUID.fromString(id);
+    return Response.successfulResponse(
+        "Product fetched successfully",
+        productService.getProductsByStoreID(uuid, pageable, search, category)
+    );
+  }
+
   @GetMapping("/public/categories")
   public ResponseEntity<?> getAllCategories() {
     return Response.successfulResponse(

@@ -35,4 +35,18 @@ public class GlobalExceptionHandler {
         Response.failedResponse("Product with the same name already exist!")
     );
   }
+
+  @ExceptionHandler(WarehouseNotFoundException.class)
+  public ResponseEntity<?> handleWarehouseNotFound(WarehouseNotFoundException e) {
+    return ResponseEntity.status(404).body(
+        Response.failedResponse(e.getMessage())
+    );
+  }
+
+  @ExceptionHandler(StoreNotFoundException.class)
+  public ResponseEntity<?> handleStoreNotFound(StoreNotFoundException e) {
+    return ResponseEntity.status(404).body(
+        Response.failedResponse(e.getMessage())
+    );
+  }
 }
