@@ -146,7 +146,7 @@ public class ProductServiceImplementation implements ProductService {
           response.getProductVersionResponse().setInventories(filteredInventories);
           return response;
         })
-        .filter(resp -> !resp.getProductVersionResponse().getInventories().isEmpty()) // remove products out of range
+//        .filter(resp -> !resp.getProductVersionResponse().getInventories().isEmpty())
         .toList();
 
     return PaginatedResponse.Utils.from(page, filteredResponses);
@@ -223,7 +223,7 @@ public class ProductServiceImplementation implements ProductService {
 
     List<ProductResponse> filteredResponses = page.getContent().stream()
         .map(ProductResponse::from)
-        .filter(resp -> !resp.getProductVersionResponse().getInventories().isEmpty()) // remove products out of range
+//        .filter(resp -> !resp.getProductVersionResponse().getInventories().isEmpty())
         .toList();
 
     return PaginatedResponse.Utils.from(page, filteredResponses);

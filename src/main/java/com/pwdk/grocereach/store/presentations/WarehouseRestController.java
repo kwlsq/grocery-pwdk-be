@@ -2,11 +2,10 @@ package com.pwdk.grocereach.store.presentations;
 
 import com.pwdk.grocereach.common.Response;
 import com.pwdk.grocereach.store.applications.WarehouseServices;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
@@ -21,11 +20,16 @@ public class WarehouseRestController {
   }
 
   @GetMapping("/{storeID}")
-  public ResponseEntity<?> getAllWarehouse(@PathVariable String storeID) {
+  public ResponseEntity<?> getAllWarehouse(@PathVariable String storeID,
+                                           @RequestParam(value = "page", defaultValue = "0") int page,
+                                           @RequestParam(value = "size", defaultValue = "10") int size) {
+
+    Pageable pageable = PageRequest.of(page, size);
+
     UUID uuid = UUID.fromString(storeID);
     return Response.successfulResponse(
         "Successfully retrieve all warehouse!",
-        warehouseServices.getAllOwnedWarehouse(uuid)
+        warehouseServices.getAllOwnedWarehouse(uuid, pageable)
     );
   }
 }

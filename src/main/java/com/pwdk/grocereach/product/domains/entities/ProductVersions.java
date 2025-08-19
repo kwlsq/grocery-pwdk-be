@@ -37,7 +37,7 @@ public class ProductVersions {
   @JoinColumn(name = "product_id", nullable = false)
   private Product product;
 
-  @OneToMany(mappedBy = "productVersion", cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "productVersion", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   private List<Inventory> inventories;
 
   @NotNull
