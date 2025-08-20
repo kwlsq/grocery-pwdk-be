@@ -1,10 +1,7 @@
 package com.pwdk.grocereach.product.infrastructures.specification;
 
 import com.pwdk.grocereach.product.domains.entities.Product;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.UUID;
@@ -24,12 +21,12 @@ public class ProductSpecification {
 
       if (category != null) {
         Predicate categoryPredicate = cb.equal(root.get("category").get("id"), category);
-        return cb.and(keywordPredicate, categoryPredicate);
+        keywordPredicate = cb.and(keywordPredicate, categoryPredicate);
       }
 
       if (storeID != null) {
-        Predicate categoryPredicate = cb.equal(root.get("store").get("id"), storeID);
-        return cb.and(keywordPredicate, categoryPredicate);
+        Predicate storePredicate = cb.equal(root.get("store").get("id"), storeID);
+        keywordPredicate = cb.and(keywordPredicate, storePredicate);
       }
 
       return keywordPredicate;

@@ -124,7 +124,7 @@ public class ProductServiceImplementation implements ProductService {
       throw new MissingParameterException("User geolocation is required!");
     }
 
-    Page<Product> page = productRepository.findAll(ProductSpecification.getFilteredProduct(search,categoryID, null), pageable).map(product -> product);
+    Page<Product> page = productRepository.findAll(ProductSpecification.searchByKeyword(search,categoryID,null), pageable).map(product -> product);
 
     List<ProductResponse> filteredResponses = page.getContent().stream()
         .map(product -> {
@@ -146,7 +146,6 @@ public class ProductServiceImplementation implements ProductService {
           response.getProductVersionResponse().setInventories(filteredInventories);
           return response;
         })
-//        .filter(resp -> !resp.getProductVersionResponse().getInventories().isEmpty())
         .toList();
 
     return PaginatedResponse.Utils.from(page, filteredResponses);
@@ -223,7 +222,6 @@ public class ProductServiceImplementation implements ProductService {
 
     List<ProductResponse> filteredResponses = page.getContent().stream()
         .map(ProductResponse::from)
-//        .filter(resp -> !resp.getProductVersionResponse().getInventories().isEmpty())
         .toList();
 
     return PaginatedResponse.Utils.from(page, filteredResponses);
