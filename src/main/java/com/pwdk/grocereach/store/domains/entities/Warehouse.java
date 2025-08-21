@@ -24,6 +24,10 @@ public class Warehouse {
   @Column(name = "id", updatable = false, nullable = false)
   private UUID id;
 
+  @ManyToOne
+  @JoinColumn(name = "store_id")
+  private Stores store;
+
   @NotNull
   @Column(name = "name")
   private String name;

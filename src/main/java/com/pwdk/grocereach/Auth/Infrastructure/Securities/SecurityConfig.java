@@ -60,7 +60,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/v1/products/public/**", "/api/v1/products/public/categories" ,"/api/v1/cart-items/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/api/v1/products/public/**", "/api/v1/products/**", "/api/v1/products/public/categories" ,"/api/v1/cart-items/**", "/api/v1/store", "/api/v1/warehouse/*", "/api/v1/images/**", "/api/v1/users/**", "/api/v1/users/store-admin/**", "/api/v1//auth/store-admin/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

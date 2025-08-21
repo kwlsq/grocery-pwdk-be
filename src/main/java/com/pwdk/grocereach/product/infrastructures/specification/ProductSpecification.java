@@ -1,16 +1,13 @@
 package com.pwdk.grocereach.product.infrastructures.specification;
 
 import com.pwdk.grocereach.product.domains.entities.Product;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.UUID;
 
 public class ProductSpecification {
-  public static Specification<Product> searchByKeyword(String keyword,UUID category) {
+  public static Specification<Product> searchByKeyword(String keyword,UUID category, UUID storeID) {
     return (Root<Product> root, CriteriaQuery<?> query, CriteriaBuilder cb) -> {
 
       Predicate keywordPredicate = cb.conjunction();
@@ -24,7 +21,12 @@ public class ProductSpecification {
 
       if (category != null) {
         Predicate categoryPredicate = cb.equal(root.get("category").get("id"), category);
-        return cb.and(keywordPredicate, categoryPredicate);
+        keywordPredicate = cb.and(keywordPredicate, categoryPredicate);
+      }
+
+      if (storeID != null) {
+        Predicate storePredicate = cb.equal(root.get("store").get("id"), storeID);
+        keywordPredicate = cb.and(keywordPredicate, storePredicate);
       }
 
       return keywordPredicate;
@@ -37,7 +39,7 @@ public class ProductSpecification {
     };
   }
 
-  public static Specification<Product> getFilteredProduct(String searchText, UUID category) {
-    return isNotDeleted().and(searchByKeyword(searchText, category));
+  public static Specification<Product> getFilteredProduct(String searchText, UUID category, UUID storeID) {
+    return isNotDeleted().and(searchByKeyword(searchText, category, storeID));
   }
 }

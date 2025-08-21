@@ -2,17 +2,26 @@ package com.pwdk.grocereach.Auth.Application.Implements;
 
 import com.pwdk.grocereach.Auth.Application.Services.UserService;
 import com.pwdk.grocereach.Auth.Domain.Entities.User;
+import com.pwdk.grocereach.Auth.Domain.Enums.UserRole;
 import com.pwdk.grocereach.Auth.Infrastructure.Repositories.UserRepository;
 import com.pwdk.grocereach.Auth.Infrastructure.Securities.CustomUserDetails;
 import com.pwdk.grocereach.Auth.Presentation.Dto.UserResponse;
 import com.pwdk.grocereach.User.Presentation.Dto.UpdateProfileRequest;
+import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.image.applications.CloudinaryService;
+import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -51,5 +60,37 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + id));
         return new CustomUserDetails(user);
+    }
+
+    @Override
+    public PaginatedResponse<UserResponse> getAllUser(Pageable pageable, UserRole role) {
+        Page<User> page;
+
+        if (role != null) {
+            page = userRepository.findAllVerifiedByRole(role, pageable).map(user -> user);
+        } else {
+            page = userRepository.findAllByVerifiedTrue(pageable);
+        }
+
+        List<UserResponse> filteredResponses = page.getContent().stream()
+            .map(UserResponse::new)
+            .toList();
+
+        return PaginatedResponse.Utils.from(page, filteredResponses);
+    }
+
+    @Override
+    public void deleteStoreAdmin(UUID userID) {
+        Optional<User> user = userRepository.findById(userID);
+        UserRole role;
+
+        if (user.isPresent()) {
+            role = user.get().getRole();
+
+            if (role.equals(UserRole.MANAGER)) {
+                user.get().setDeletedAt(LocalDateTime.now());
+                userRepository.save(user.get());
+            }
+        }
     }
 }

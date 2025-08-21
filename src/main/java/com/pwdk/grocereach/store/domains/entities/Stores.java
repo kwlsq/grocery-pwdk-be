@@ -1,10 +1,13 @@
 package com.pwdk.grocereach.store.domains.entities;
 
+import com.pwdk.grocereach.product.domains.entities.Product;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Setter
@@ -20,6 +23,12 @@ public class Stores {
   @GeneratedValue
   @Column(name = "id", updatable = false, nullable = false)
   private UUID id;
+
+  @OneToMany(mappedBy = "store")
+  private List<Warehouse> warehouses = new ArrayList<>();
+
+  @OneToMany(mappedBy = "store")
+  private List<Product> products = new ArrayList<>();
 
   @Column(name = "store_name")
   private String storeName;

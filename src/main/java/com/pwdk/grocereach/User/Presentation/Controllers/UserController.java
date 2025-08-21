@@ -1,6 +1,7 @@
 package com.pwdk.grocereach.User.Presentation.Controllers; // Or your correct controllers package
 
 import com.pwdk.grocereach.Auth.Domain.Entities.User;
+import com.pwdk.grocereach.Auth.Domain.Enums.UserRole;
 import com.pwdk.grocereach.Auth.Infrastructure.Securities.CustomUserDetails;
 import com.pwdk.grocereach.User.Application.Services.AddressService;
 import com.pwdk.grocereach.Auth.Application.Services.UserService;
@@ -8,8 +9,11 @@ import com.pwdk.grocereach.User.Presentation.Dto.AddressRequest;
 import com.pwdk.grocereach.User.Presentation.Dto.AddressResponse;
 import com.pwdk.grocereach.Auth.Presentation.Dto.UserResponse;
 import com.pwdk.grocereach.User.Presentation.Dto.UpdateProfileRequest;
+import com.pwdk.grocereach.common.Response;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,7 +26,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -77,5 +81,25 @@ public class UserController {
 
         UserResponse updatedUser = userService.updateUserProfile(userId, profileRequest, profileImage);
         return ResponseEntity.ok(updatedUser);
+    }
+
+    @GetMapping()
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllUser(@RequestParam(value = "page", defaultValue = "0") int page,
+                                        @RequestParam(value = "size", defaultValue = "12") int size,
+                                        @RequestParam(value = "role", defaultValue = "") UserRole role) {
+        Pageable pageable = PageRequest.of(page, size);
+
+        return Response.successfulResponse(
+            "Successfully fetch all user",
+            userService.getAllUser(pageable, role)
+        );
+    }
+
+    @PostMapping("/store-admin")
+    public ResponseEntity<?> removeStoreAdmin(@RequestParam(value = "userID", defaultValue = "") String userID) {
+        UUID uuid = UUID.fromString(userID);
+        userService.deleteStoreAdmin(uuid);
+        return Response.successfulResponse("Successfully remove store admin");
     }
 }

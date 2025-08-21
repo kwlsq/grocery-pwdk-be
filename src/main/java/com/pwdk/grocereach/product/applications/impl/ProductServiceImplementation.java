@@ -1,8 +1,9 @@
 package com.pwdk.grocereach.product.applications.impl;
 
 import com.pwdk.grocereach.common.PaginatedResponse;
-import com.pwdk.grocereach.common.exception.MissingParameterException;
-import com.pwdk.grocereach.common.exception.ProductNotFoundException;
+import com.pwdk.grocereach.common.exception.*;
+import com.pwdk.grocereach.inventory.domains.entities.Inventory;
+import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepository;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductCategory;
@@ -15,14 +16,19 @@ import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.product.presentations.dtos.ProductCategoryResponse;
 import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
+import com.pwdk.grocereach.store.domains.entities.Stores;
+import com.pwdk.grocereach.store.domains.entities.Warehouse;
+import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
+import com.pwdk.grocereach.store.infrastructures.repositories.WarehouseRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductServiceImplementation implements ProductService {
@@ -30,20 +36,36 @@ public class ProductServiceImplementation implements ProductService {
   private final ProductRepository productRepository;
   private final ProductVersionRepository productVersionRepository;
   private final ProductCategoryRepository productCategoryRepository;
+  private final WarehouseRepository warehouseRepository;
+  private final StoresRepository storesRepository;
+  private final InventoryRepository inventoryRepository;
 
-  public ProductServiceImplementation (ProductRepository productRepository, ProductVersionRepository productVersionRepository, ProductCategoryRepository productCategoryRepository) {
+  public ProductServiceImplementation (ProductRepository productRepository, ProductVersionRepository productVersionRepository, ProductCategoryRepository productCategoryRepository, WarehouseRepository warehouseRepository, StoresRepository storesRepository, InventoryRepository inventoryRepository) {
     this.productRepository = productRepository;
     this.productVersionRepository = productVersionRepository;
     this.productCategoryRepository = productCategoryRepository;
+    this.warehouseRepository = warehouseRepository;
+    this.storesRepository = storesRepository;
+    this.inventoryRepository = inventoryRepository;
   }
 
   @Override
   public ProductResponse createProduct(CreateProductRequest request) {
 
+    //    Find existing product by name
+    Optional<Product> productOptional = productRepository.findByName(request.getName());
+
+    if (productOptional.isPresent()) {
+      throw new ProductAlreadyExistException("Product with the same name already exist!");
+    }
+
     UUID categoryUUID = UUID.fromString(request.getCategoryID()); // get UUID from categoryID string
+
+    UUID storeUUID = UUID.fromString(request.getStoreID()); // get UUID from storeID string
 
 //    Find the category
     ProductCategory category = productCategoryRepository.findById(categoryUUID).orElseThrow(() -> new ProductNotFoundException("Category not found!"));
+    Stores store = storesRepository.findById(storeUUID).orElseThrow(() -> new StoreNotFoundException("Store not found!"));
 
 //    Create product first & save to DB *without product version
     Product product = Product.builder()
@@ -51,6 +73,7 @@ public class ProductServiceImplementation implements ProductService {
         .description(request.getDescription())
         .isActive(true)
         .category(category)
+        .store(store)
         .build();
     productRepository.save(product);
 
@@ -68,6 +91,23 @@ public class ProductServiceImplementation implements ProductService {
     product.setCurrentVersion(versions); //set the version to product
     productRepository.save(product);
 
+    request.getInventories().forEach(inventoryReq -> {
+      UUID warehouseUUID = UUID.fromString(inventoryReq.getWarehouseID());
+      Warehouse warehouse = warehouseRepository.findById(warehouseUUID)
+          .orElseThrow(() -> new WarehouseNotFoundException("Warehouse not found!"));
+
+      Inventory inventory = Inventory.builder()
+          .warehouse(warehouse)
+          .productVersion(versions)
+          .stock(inventoryReq.getStock())
+          .journal("+" + inventoryReq.getStock())
+          .build();
+
+      inventoryRepository.save(inventory);
+    });
+
+
+
     return ProductResponse.from(product);
   }
 
@@ -84,7 +124,7 @@ public class ProductServiceImplementation implements ProductService {
       throw new MissingParameterException("User geolocation is required!");
     }
 
-    Page<Product> page = productRepository.findAll(ProductSpecification.getFilteredProduct(search,categoryID), pageable).map(product -> product);
+    Page<Product> page = productRepository.findAll(ProductSpecification.searchByKeyword(search,categoryID,null), pageable).map(product -> product);
 
     List<ProductResponse> filteredResponses = page.getContent().stream()
         .map(product -> {
@@ -106,7 +146,6 @@ public class ProductServiceImplementation implements ProductService {
           response.getProductVersionResponse().setInventories(filteredInventories);
           return response;
         })
-        .filter(resp -> !resp.getProductVersionResponse().getInventories().isEmpty()) // remove products out of range
         .toList();
 
     return PaginatedResponse.Utils.from(page, filteredResponses);
@@ -168,6 +207,24 @@ public class ProductServiceImplementation implements ProductService {
     return productCategoryRepository.findAll().stream()
         .map(ProductCategoryResponse::from)
         .toList();
+  }
+
+  @Override
+  public PaginatedResponse<ProductResponse> getProductsByStoreID(UUID storeID, Pageable pageable, String search, String category) {
+
+    UUID categoryID = null;
+
+    if (category != null && !category.trim().isEmpty()) {
+      categoryID = UUID.fromString(category);
+    }
+
+    Page<Product> page = productRepository.findAll(ProductSpecification.getFilteredProduct(search,categoryID, storeID), pageable).map(product -> product);
+
+    List<ProductResponse> filteredResponses = page.getContent().stream()
+        .map(ProductResponse::from)
+        .toList();
+
+    return PaginatedResponse.Utils.from(page, filteredResponses);
   }
 
   private double haversine(double lat1, double lon1, double lat2, double lon2) {

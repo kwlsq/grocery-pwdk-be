@@ -12,11 +12,15 @@ public class UserResponse {
     private String email;
     private String fullName;
     private UserRole role;
+    private String photoUrl;
+    private boolean isVerified;
 
     public UserResponse(User user) {
         this.id = user.getId();
         this.email = user.getEmail();
         this.fullName = user.getFullName();
         this.role = user.getRole();
+        this.photoUrl = user.getPhotoUrl();
+        this.isVerified = user.isVerified();
     }
 }

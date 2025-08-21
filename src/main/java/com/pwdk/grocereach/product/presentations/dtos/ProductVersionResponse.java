@@ -25,9 +25,9 @@ public class ProductVersionResponse {
         version.getVersionNumber(),
         version.getPrice(),
         version.getWeight(),
-        version.getInventories().stream()
+        version.getInventories() != null ? version.getInventories().stream()
             .map(InventoryResponse::from)
-            .toList()
+            .toList() : null
     );
   }
 }

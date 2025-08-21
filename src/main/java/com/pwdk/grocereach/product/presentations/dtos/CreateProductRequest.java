@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -30,4 +31,21 @@ public class CreateProductRequest {
 
   @NotBlank(message = "Category ID is required")
   private String categoryID;
+
+  @NotBlank(message = "Store ID is required")
+  private String storeID;
+
+  @NotBlank(message = "Inventories are required")
+  private List<WarehouseStock> inventories;
+
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class WarehouseStock {
+    @NotBlank(message = "Warehouse ID is required")
+    private String warehouseID;
+
+    @NotNull(message = "Stock is required")
+    private Integer stock;
+  }
 }
