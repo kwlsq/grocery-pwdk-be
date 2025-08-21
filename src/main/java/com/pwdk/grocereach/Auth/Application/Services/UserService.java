@@ -16,4 +16,5 @@ public interface UserService extends UserDetailsService {
     UserResponse updateUserProfile(String userId, UpdateProfileRequest request, MultipartFile profileImage);
     UserDetails loadUserById(UUID id);
     PaginatedResponse<UserResponse> getAllUser(Pageable pageable, UserRole role);
+    void deleteStoreAdmin(UUID userID);
 }

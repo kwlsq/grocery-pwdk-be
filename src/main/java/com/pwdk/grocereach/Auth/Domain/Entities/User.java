@@ -3,6 +3,7 @@ package com.pwdk.grocereach.Auth.Domain.Entities;
 import com.pwdk.grocereach.Auth.Domain.Enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -15,7 +16,7 @@ import java.util.UUID;
 @Builder
 @Entity
 @Table(name = "users")
-
+@Filter(name = "deletedAtNull", condition = "deleted_at is null")
 public class User {
     @Id
     @Column(name = "id", nullable = false)

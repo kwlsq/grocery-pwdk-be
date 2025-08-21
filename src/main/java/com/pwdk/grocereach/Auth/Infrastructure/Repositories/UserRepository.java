@@ -18,9 +18,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
     Boolean existsByEmail(String email);
 
-    @Query("SELECT u FROM User u WHERE u.role = :role AND u.isVerified = true")
+    @Query("SELECT u FROM User u WHERE u.role = :role AND u.isVerified = true AND u.deletedAt IS NULL")
     Page<User> findAllVerifiedByRole(@Param("role") UserRole role, Pageable pageable);
 
-    @Query("SELECT u FROM User u WHERE u.isVerified = true")
+    @Query("SELECT u FROM User u WHERE u.isVerified = true AND u.deletedAt IS NULL")
     Page<User> findAllByVerifiedTrue(Pageable pageable);
 }

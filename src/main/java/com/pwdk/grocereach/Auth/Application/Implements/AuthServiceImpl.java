@@ -5,6 +5,7 @@ import com.pwdk.grocereach.Auth.Application.Services.EmailService;
 import com.pwdk.grocereach.Auth.Application.Services.TokenGeneratorService;
 import com.pwdk.grocereach.Auth.Application.Services.UserService;
 import com.pwdk.grocereach.Auth.Domain.Entities.User;
+import com.pwdk.grocereach.Auth.Domain.Enums.UserRole;
 import com.pwdk.grocereach.Auth.Domain.ValueOfObject.Token;
 import com.pwdk.grocereach.Auth.Infrastructure.Repositories.UserRepository;
 import com.pwdk.grocereach.Auth.Infrastructure.Securities.CustomUserDetails;
@@ -176,5 +177,36 @@ public class AuthServiceImpl implements AuthService {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         redisTemplate.delete(redisKey);
+    }
+
+    @Override
+    public UserResponse registerStoreAdmin(RegisterRequest request) {
+        // This method is correct and unchanged
+        userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
+            if (existingUser.isVerified()) {
+                throw new IllegalStateException("Email is already in use.");
+            }
+            throw new IllegalStateException("This email has been registered but not verified.");
+        });
+
+        User newUser = new User();
+        newUser.setEmail(request.getEmail());
+        newUser.setFullName(request.getFullName());
+        newUser.setVerified(false);
+        String randomPassword = UUID.randomUUID().toString();
+        newUser.setPassword(passwordEncoder.encode(randomPassword));
+        userRepository.save(newUser);
+
+        newUser.setRole(UserRole.MANAGER); // set role to manager
+
+        userRepository.save(newUser);
+
+        String token = UUID.randomUUID().toString();
+        String redisKey = "verification_token:" + token;
+        redisTemplate.opsForValue().set(redisKey, newUser.getId().toString(), 1, TimeUnit.HOURS);
+
+        emailService.sendVerificationEmail(newUser.getEmail(), token);
+
+        return new UserResponse(newUser);
     }
 }

@@ -13,6 +13,6 @@ public interface AuthService {
     void resendVerification(String email);
     void requestPasswordReset(String email);
     void confirmPasswordReset(String token, String newPassword);
-
+    UserResponse registerStoreAdmin(RegisterRequest request);
 }
 

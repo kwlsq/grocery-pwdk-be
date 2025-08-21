@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -129,6 +129,16 @@ public class AuthController {
             authService.confirmPasswordReset(token, newPassword);
             return ResponseEntity.ok("Your password has been successfully reset. You can now log in.");
         } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/store-admin")
+    public ResponseEntity<?> registerStoreAdmin(@RequestBody RegisterRequest request) {
+        try {
+            authService.registerStoreAdmin(request);
+            return ResponseEntity.ok("Registration successful. Please check your email to verify your account.");
+        } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }

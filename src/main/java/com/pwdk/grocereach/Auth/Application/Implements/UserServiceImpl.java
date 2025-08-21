@@ -18,7 +18,10 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -74,5 +77,20 @@ public class UserServiceImpl implements UserService {
             .toList();
 
         return PaginatedResponse.Utils.from(page, filteredResponses);
+    }
+
+    @Override
+    public void deleteStoreAdmin(UUID userID) {
+        Optional<User> user = userRepository.findById(userID);
+        UserRole role;
+
+        if (user.isPresent()) {
+            role = user.get().getRole();
+
+            if (role.equals(UserRole.MANAGER)) {
+                user.get().setDeletedAt(LocalDateTime.now());
+                userRepository.save(user.get());
+            }
+        }
     }
 }

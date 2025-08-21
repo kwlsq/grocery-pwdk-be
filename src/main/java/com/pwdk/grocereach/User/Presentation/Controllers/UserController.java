@@ -95,4 +95,11 @@ public class UserController {
             userService.getAllUser(pageable, role)
         );
     }
+
+    @PostMapping("/store-admin")
+    public ResponseEntity<?> removeStoreAdmin(@RequestParam(value = "userID", defaultValue = "") String userID) {
+        UUID uuid = UUID.fromString(userID);
+        userService.deleteStoreAdmin(uuid);
+        return Response.successfulResponse("Successfully remove store admin");
+    }
 }
