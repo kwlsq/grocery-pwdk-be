@@ -1,6 +1,12 @@
 package com.pwdk.grocereach.promotion.application.impl;
 
 import com.pwdk.grocereach.common.PaginatedResponse;
+import com.pwdk.grocereach.common.exception.ProductNotFoundException;
+import com.pwdk.grocereach.product.domains.entities.Product;
+import com.pwdk.grocereach.product.domains.entities.ProductPromotions;
+import com.pwdk.grocereach.product.infrastructures.repositories.ProductPromotionRepository;
+import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
+import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.promotion.application.PromotionService;
 import com.pwdk.grocereach.promotion.domain.entities.Promotions;
 import com.pwdk.grocereach.promotion.infrastructure.repositories.PromotionRepository;
@@ -12,14 +18,19 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class PromotionServiceImplementation implements PromotionService {
 
   private final PromotionRepository promotionRepository;
+  private final ProductRepository productRepository;
+  private final ProductPromotionRepository productPromotionRepository;
 
-  public PromotionServiceImplementation(PromotionRepository promotionRepository) {
+  public PromotionServiceImplementation(PromotionRepository promotionRepository, ProductRepository productRepository, ProductPromotionRepository productPromotionRepository) {
     this.promotionRepository = promotionRepository;
+    this.productRepository = productRepository;
+    this.productPromotionRepository = productPromotionRepository;
   }
 
   @Override
@@ -53,6 +64,28 @@ public class PromotionServiceImplementation implements PromotionService {
         .toList();
 
     return PaginatedResponse.Utils.from(promotions, promotionResponses);
+  }
+
+  @Override
+  public ProductResponse attachPromotion(UUID productID, UUID promotionID) {
+    Product product = productRepository.findById(productID).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
+    Promotions promotion = promotionRepository.findById(promotionID).orElseThrow(() -> new RuntimeException("Promotion not found!"));
+
+//    Create new product promotion
+    ProductPromotions productPromotions = new ProductPromotions();
+    productPromotions.setProduct(product);
+    productPromotions.setPromotion(promotion);
+
+    productPromotionRepository.save(productPromotions);
+
+    List<ProductPromotions> promotions = product.getProductPromotions();
+    promotions.add(productPromotions);
+
+    product.setProductPromotions(promotions);
+
+    productRepository.save(product);
+
+    return ProductResponse.from(product);
   }
 
 }

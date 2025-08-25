@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.product.domains.entities;
 
+import com.pwdk.grocereach.promotion.domain.entities.Promotions;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
@@ -20,6 +21,14 @@ public class ProductPromotions {
   @GeneratedValue
   @Column(name = "id", updatable = false, nullable = false)
   private UUID id;
+
+  @ManyToOne
+  @JoinColumn(name = "product_id")
+  private Product product;
+
+  @ManyToOne
+  @JoinColumn(name = "promotion_id")
+  private Promotions promotion;
 
   @Column(name = "created_at")
   private Instant createdAt;

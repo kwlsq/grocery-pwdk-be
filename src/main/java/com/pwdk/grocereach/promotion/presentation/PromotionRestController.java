@@ -2,11 +2,14 @@ package com.pwdk.grocereach.promotion.presentation;
 
 import com.pwdk.grocereach.common.Response;
 import com.pwdk.grocereach.promotion.application.PromotionService;
+import com.pwdk.grocereach.promotion.presentation.dto.AttachPromotionRequest;
 import com.pwdk.grocereach.promotion.presentation.dto.CreatePromotionRequest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/promotions")
@@ -35,6 +38,17 @@ public class PromotionRestController {
     return Response.successfulResponse(
         "Successfully create promotion",
         promotionService.createPromotion(request)
+    );
+  }
+
+  @PostMapping("/{productID}")
+  public ResponseEntity<?> attachPromotion(@RequestBody AttachPromotionRequest request, @PathVariable String productID) {
+    UUID productUUID = UUID.fromString(productID);
+    UUID promotionUUID = UUID.fromString(request.getPromotionID());
+
+    return Response.successfulResponse(
+        "Successfully attach promotion to product!",
+        promotionService.attachPromotion(productUUID, promotionUUID)
     );
   }
 }

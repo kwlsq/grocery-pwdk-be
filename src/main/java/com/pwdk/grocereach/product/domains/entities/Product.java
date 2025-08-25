@@ -45,6 +45,9 @@ public class Product {
   @OneToMany(mappedBy = "product")
   private List<ProductImages> productImages = new ArrayList<>();
 
+  @OneToMany(mappedBy = "product")
+  private List<ProductPromotions> productPromotions = new ArrayList<>();
+
   @ManyToOne
   @JoinColumn(name = "category_id")
   private ProductCategory category;

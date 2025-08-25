@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.promotion.domain.entities;
 
+import com.pwdk.grocereach.product.domains.entities.ProductPromotions;
 import com.pwdk.grocereach.promotion.domain.enums.PromotionType;
 import com.pwdk.grocereach.promotion.domain.enums.PromotionUnit;
 import jakarta.persistence.*;
@@ -8,6 +9,8 @@ import org.hibernate.annotations.Filter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Setter
@@ -61,6 +64,9 @@ public class Promotions {
 
   @Column(name = "deleted_at")
   private Instant deletedAt;
+
+  @OneToMany(mappedBy = "promotion")
+  private List<ProductPromotions> productPromotions = new ArrayList<>();
 
   @PrePersist
   public void prePersist() {

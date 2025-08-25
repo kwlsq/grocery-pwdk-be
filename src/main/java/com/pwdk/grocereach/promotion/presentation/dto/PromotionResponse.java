@@ -2,6 +2,7 @@ package com.pwdk.grocereach.promotion.presentation.dto;
 
 import com.pwdk.grocereach.promotion.domain.entities.Promotions;
 import com.pwdk.grocereach.promotion.domain.enums.PromotionType;
+import com.pwdk.grocereach.promotion.domain.enums.PromotionUnit;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,7 @@ public class PromotionResponse {
   private Instant startAt;
   private Instant endAt;
   private PromotionType type;
+  private PromotionUnit unit;
 
   public static PromotionResponse from(Promotions promotions) {
     return new PromotionResponse(
@@ -32,7 +34,8 @@ public class PromotionResponse {
         promotions.getMinPurchase(),
         promotions.getStartAt(),
         promotions.getEndAt(),
-        promotions.getType()
+        promotions.getType(),
+        promotions.getUnit()
     );
   }
 }
