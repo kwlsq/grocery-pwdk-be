@@ -2,6 +2,7 @@ package com.pwdk.grocereach.Auth.Domain.Entities;
 
 import com.pwdk.grocereach.Auth.Domain.Enums.UserRole;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.Filter;
 import org.hibernate.annotations.JdbcTypeCode;
@@ -24,7 +25,7 @@ public class User {
     private UUID id = UUID.randomUUID();
 
     @Column(name = "email", unique = true, nullable = false)
-    @NonNull
+    @NotNull
     private String email;
 
     @Column(name = "phone_number")

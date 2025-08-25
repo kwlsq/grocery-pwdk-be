@@ -76,7 +76,7 @@ public class ProductRestController {
     );
   }
 
-  @PostMapping("/create")
+  @PostMapping()
   public ResponseEntity<?> createProduct(@RequestBody CreateProductRequest request) {
     return Response.successfulResponse(
         "Product successfully created!",
@@ -84,7 +84,7 @@ public class ProductRestController {
     );
   }
 
-  @PatchMapping("/update/{id}")
+  @PatchMapping("/{id}")
   public ResponseEntity<?> updateProduct(@PathVariable String id,@RequestBody UpdateProductRequest request) {
     UUID uuid = UUID.fromString(id);
     return Response.successfulResponse(
@@ -93,7 +93,7 @@ public class ProductRestController {
     );
   }
 
-  @DeleteMapping("/delete/{id}")
+  @DeleteMapping("/{id}")
   public ResponseEntity<?> deleteProduct(@PathVariable String id) {
     UUID uuid = UUID.fromString(id);
     productService.deleteProduct(uuid);

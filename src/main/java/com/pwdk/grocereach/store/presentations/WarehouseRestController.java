@@ -2,6 +2,7 @@ package com.pwdk.grocereach.store.presentations;
 
 import com.pwdk.grocereach.common.Response;
 import com.pwdk.grocereach.store.applications.WarehouseServices;
+import com.pwdk.grocereach.store.presentations.dtos.CreateWarehouseRequest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -32,4 +33,13 @@ public class WarehouseRestController {
         warehouseServices.getAllOwnedWarehouse(uuid, pageable)
     );
   }
+
+  @PostMapping
+  public ResponseEntity<?> createWarehouse(@RequestBody CreateWarehouseRequest request) {
+    return Response.successfulResponse(
+        "Successfully create warehouse",
+        warehouseServices.createWarehouse(request)
+    );
+  }
+
 }

@@ -13,6 +13,7 @@ import java.util.UUID;
 public class WarehouseResponse {
   private UUID id;
   private String name;
+  private String address;
   private double latitude;
   private double longitude;
   private boolean isActive;
@@ -21,6 +22,7 @@ public class WarehouseResponse {
     return new WarehouseResponse(
         warehouse.getId(),
         warehouse.getName(),
+        warehouse.getAddress(),
         warehouse.getLatitude(),
         warehouse.getLongitude(),
         warehouse.isActive()

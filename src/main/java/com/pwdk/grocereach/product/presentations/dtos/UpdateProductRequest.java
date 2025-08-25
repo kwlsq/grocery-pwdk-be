@@ -15,7 +15,6 @@ public class UpdateProductRequest {
   private String description;
   private BigDecimal price;
   private BigDecimal weight;
-  private Integer stock;
   private String changeReason;
   private String categoryID;
 }
