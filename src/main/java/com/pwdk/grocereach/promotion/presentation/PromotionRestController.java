@@ -40,15 +40,4 @@ public class PromotionRestController {
         promotionService.createPromotion(request)
     );
   }
-
-  @PostMapping("/{productID}")
-  public ResponseEntity<?> attachPromotion(@RequestBody AttachPromotionRequest request, @PathVariable String productID) {
-    UUID productUUID = UUID.fromString(productID);
-    UUID promotionUUID = UUID.fromString(request.getPromotionID());
-
-    return Response.successfulResponse(
-        "Successfully attach promotion to product!",
-        promotionService.attachPromotion(productUUID, promotionUUID)
-    );
-  }
 }

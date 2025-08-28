@@ -12,5 +12,4 @@ import java.util.UUID;
 public interface PromotionService {
   PromotionResponse createPromotion(CreatePromotionRequest request);
   PaginatedResponse<PromotionResponse> getAllPromotions(Pageable pageable);
-  ProductResponse attachPromotion(UUID productID, UUID promotionID);
 }

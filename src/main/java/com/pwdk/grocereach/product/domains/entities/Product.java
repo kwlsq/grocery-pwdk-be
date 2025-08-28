@@ -10,9 +10,7 @@ import org.hibernate.annotations.FilterDef;
 import org.hibernate.annotations.Where;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Setter
 @Getter
@@ -50,7 +48,7 @@ public class Product {
   private List<ProductImages> productImages = new ArrayList<>();
 
   @OneToMany(mappedBy = "product")
-  private List<ProductPromotions> productPromotions = new ArrayList<>();
+  private Set<ProductPromotions> productPromotions = new HashSet<>();
 
   @ManyToOne
   @JoinColumn(name = "category_id")

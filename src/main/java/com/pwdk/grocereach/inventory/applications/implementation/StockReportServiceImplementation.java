@@ -5,12 +5,12 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
+import com.pwdk.grocereach.common.PaginatedResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.pwdk.grocereach.inventory.applications.StockReportService;
@@ -33,67 +33,44 @@ public class StockReportServiceImplementation implements StockReportService {
     }
 
     @Override
-    public List<StockReportSummaryResponse> getMonthlyStockSummary(StockReportRequest request, UUID userStoreId) {
-        // Set default month to current month if not specified
+    public PaginatedResponse<StockReportSummaryResponse> getMonthlyStockSummary(StockReportRequest request, UUID userStoreId, Pageable pageable) {
         YearMonth month = request.getMonth() != null ? request.getMonth() : YearMonth.now();
-        
-        // Calculate date range for the month
+
         Instant startDate = month.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
         Instant endDate = month.plusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-        
-        // Apply store filter based on user role
+
         UUID storeId = userStoreId != null ? userStoreId : request.getStoreId();
-        
-        // Get inventory history for the month
-        List<Inventory> inventoryHistory = inventoryRepository.findInventoryHistoryForReport(
-                storeId, request.getWarehouseId(), request.getProductName(), startDate, endDate
+
+        Page<Inventory> inventoryPage = inventoryRepository.findInventoryHistoryForReport(
+            storeId,
+            request.getWarehouseId(),
+            request.getProductName(),
+            startDate,
+            endDate,
+            pageable
         );
-        
-        // Get current inventory at the end of the month
-        List<Inventory> currentInventory = inventoryRepository.findCurrentInventoryForReport(
-                storeId, request.getWarehouseId(), request.getProductName(), startDate, endDate
-        );
-        
-        // Group by product version and warehouse
-        Map<String, List<Inventory>> groupedHistory = inventoryHistory.stream()
-                .collect(Collectors.groupingBy(inv -> 
-                        inv.getProductVersion().getProduct().getId() + "_" + 
-                        inv.getProductVersion().getId() + "_" + 
-                        inv.getWarehouse().getId()
-                ));
-        
-        List<StockReportSummaryResponse> summaries = new ArrayList<>();
-        
-        for (Map.Entry<String, List<Inventory>> entry : groupedHistory.entrySet()) {
-            List<Inventory> productInventories = entry.getValue();
-            if (productInventories.isEmpty()) continue;
-            
-            Inventory firstInv = productInventories.get(0);
-            
-            // Calculate totals
-            int totalAddition = productInventories.stream()
+
+        List<StockReportSummaryResponse> summaries = inventoryPage.getContent().stream()
+            .collect(Collectors.groupingBy(inv -> inv.getProductVersion().getId() + "_" + inv.getWarehouse().getId()))
+            .entrySet().stream()
+            .map(entry -> {
+                List<Inventory> productInventories = entry.getValue();
+                Inventory firstInv = productInventories.get(0);
+
+                int totalAddition = productInventories.stream()
                     .mapToInt(inv -> inv.getStock() > 0 ? inv.getStock() : 0)
                     .sum();
-            
-            int totalReduction = productInventories.stream()
+
+                int totalReduction = productInventories.stream()
                     .mapToInt(inv -> inv.getStock() < 0 ? Math.abs(inv.getStock()) : 0)
                     .sum();
-            
-            // Find final stock from current inventory
-            int finalStock = currentInventory.stream()
-                    .filter(inv -> inv.getProductVersion().getId().equals(firstInv.getProductVersion().getId()) &&
-                                 inv.getWarehouse().getId().equals(firstInv.getWarehouse().getId()))
-                    .mapToInt(Inventory::getStock)
-                    .findFirst()
-                    .orElse(0);
-            
-            // Calculate average price
-            BigDecimal averagePrice = productInventories.stream()
+
+                BigDecimal averagePrice = productInventories.stream()
                     .map(inv -> inv.getProductVersion().getPrice())
                     .reduce(BigDecimal.ZERO, BigDecimal::add)
                     .divide(BigDecimal.valueOf(productInventories.size()), 2, RoundingMode.HALF_UP);
-            
-            StockReportSummaryResponse summary = StockReportSummaryResponse.builder()
+
+                return StockReportSummaryResponse.builder()
                     .productName(firstInv.getProductVersion().getProduct().getName())
                     .productVersion("v" + firstInv.getProductVersion().getVersionNumber())
                     .storeName(firstInv.getWarehouse().getStore().getStoreName())
@@ -101,45 +78,96 @@ public class StockReportServiceImplementation implements StockReportService {
                     .month(month)
                     .totalAddition(totalAddition)
                     .totalReduction(totalReduction)
-                    .finalStock(finalStock)
+                    .finalStock(firstInv.getStock()) // or latest stock logic
                     .averagePrice(averagePrice)
                     .build();
-            
-            summaries.add(summary);
-        }
-        
-        return summaries;
+            }).collect(Collectors.toList());
+
+        return PaginatedResponse.Utils.from(inventoryPage, summaries);
     }
 
     @Override
-    public List<StockReportDetailResponse> getMonthlyStockDetail(StockReportRequest request, UUID userStoreId) {
-        // Set default month to current month if not specified
+    public PaginatedResponse<StockReportDetailResponse> getMonthlyStockDetail(StockReportRequest request, UUID userStoreId, Pageable pageable) {
         YearMonth month = request.getMonth() != null ? request.getMonth() : YearMonth.now();
-        
+
         // Calculate date range for the month
         Instant startDate = month.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
         Instant endDate = month.plusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-        
+
         // Apply store filter based on user role
         UUID storeId = userStoreId != null ? userStoreId : request.getStoreId();
-        
-        // Get inventory history for the month
-        List<Inventory> inventoryHistory = inventoryRepository.findInventoryHistoryForReport(
-                storeId, request.getWarehouseId(), request.getProductName(), startDate, endDate
+
+        // Fetch inventory records for this period
+        Page<Inventory> inventoryList = inventoryRepository.findInventoryHistoryForReport(
+            storeId,
+            request.getWarehouseId(),
+            request.getProductName(),
+            startDate,
+            endDate,
+            Pageable.unpaged() // We aggregate before paging
         );
-        
-        return inventoryHistory.stream()
-                .map(inv -> StockReportDetailResponse.builder()
-                        .productName(inv.getProductVersion().getProduct().getName())
-                        .productVersion("v" + inv.getProductVersion().getVersionNumber())
-                        .storeName(inv.getWarehouse().getStore().getStoreName())
-                        .warehouseName(inv.getWarehouse().getName())
-                        .stockChange(inv.getStock())
-                        .journal(inv.getJournal())
-                        .timestamp(inv.getCreatedAt())
-                        .price(inv.getProductVersion().getPrice())
-                        .changeType(inv.getStock() > 0 ? "ADDITION" : "REDUCTION")
-                        .build())
-                .collect(Collectors.toList());
+
+        // Group by Product + Version
+        Map<UUID, List<Inventory>> groupedByProductVersion = inventoryList.stream()
+            .collect(Collectors.groupingBy(inv -> inv.getProductVersion().getId()));
+
+        List<StockReportDetailResponse> summaryList = new ArrayList<>();
+
+        for (Map.Entry<UUID, List<Inventory>> entry : groupedByProductVersion.entrySet()) {
+            List<Inventory> productRecords = entry.getValue();
+            Inventory sample = productRecords.get(0);
+
+            // Opening stock: Get all inventory movements before startDate to calculate opening balance
+            Page<Inventory> historicalInventory = inventoryRepository.findInventoryHistoryForReport(
+                storeId,
+                request.getWarehouseId(),
+                null, // Don't filter by product name for historical data
+                Instant.EPOCH, // From the beginning of time
+                startDate, // Until start of reporting period
+                Pageable.unpaged()
+            );
+
+            // Calculate opening stock by summing all movements before the period for this product version
+            Long openingStock = historicalInventory.stream()
+                .filter(inv -> inv.getProductVersion().getId().equals(entry.getKey()))
+                .mapToLong(Inventory::getStock)
+                .sum();
+
+            // Calculate net additions and reductions during the period
+            long totalAdditions = productRecords.stream()
+                .filter(inv -> inv.getStock() > 0)
+                .mapToLong(Inventory::getStock)
+                .sum();
+
+            long totalReductions = productRecords.stream()
+                .filter(inv -> inv.getStock() < 0)
+                .mapToLong(inv -> Math.abs(inv.getStock()))
+                .sum();
+
+            long closingStock = openingStock + totalAdditions - totalReductions;
+
+            summaryList.add(StockReportDetailResponse.builder()
+                .productName(sample.getProductVersion().getProduct().getName())
+                .productVersion("v" + sample.getProductVersion().getVersionNumber())
+                .storeName(sample.getWarehouse().getStore().getStoreName())
+                .warehouseName(sample.getWarehouse().getName())
+                .price(sample.getProductVersion().getPrice())
+                .build());
+        }
+
+        // Sort the results for consistent ordering
+        summaryList.sort(Comparator
+            .comparing(StockReportDetailResponse::getProductName)
+            .thenComparing(StockReportDetailResponse::getProductVersion));
+
+        // Apply pagination manually after aggregation
+        int totalElements = summaryList.size();
+        int start = Math.min((int) pageable.getOffset(), totalElements);
+        int end = Math.min(start + pageable.getPageSize(), totalElements);
+
+        List<StockReportDetailResponse> paginatedList = start < totalElements ?
+            summaryList.subList(start, end) : new ArrayList<>();
+
+        return PaginatedResponse.Utils.from(inventoryList, paginatedList);
     }
 }

@@ -38,6 +38,8 @@ public class CreateProductRequest {
   @NotBlank(message = "Inventories are required")
   private List<WarehouseStock> inventories;
 
+  private List<UpdateProductRequest.AttachPromotion> promotions;
+
   @Data
   @NoArgsConstructor
   @AllArgsConstructor
@@ -47,5 +49,12 @@ public class CreateProductRequest {
 
     @NotNull(message = "Stock is required")
     private Integer stock;
+  }
+
+  @Data
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class AttachPromotion {
+    private String promotionID;
   }
 }

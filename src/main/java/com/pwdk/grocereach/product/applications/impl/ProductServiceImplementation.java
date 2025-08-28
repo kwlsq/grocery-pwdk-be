@@ -4,31 +4,40 @@ import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.common.exception.*;
 import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepository;
+import com.pwdk.grocereach.inventory.infrastructures.repositories.impl.InventoryRepoImpl;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductCategory;
+import com.pwdk.grocereach.product.domains.entities.ProductPromotions;
 import com.pwdk.grocereach.product.domains.entities.ProductVersions;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductCategoryRepository;
+import com.pwdk.grocereach.product.infrastructures.repositories.ProductPromotionRepository;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductVersionRepository;
+import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductCategoryRepoImpl;
+import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductPromotionRepoImpl;
+import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductRepoImpl;
+import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductVersionRepoImpl;
 import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.product.presentations.dtos.ProductCategoryResponse;
 import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
+import com.pwdk.grocereach.promotion.domain.entities.Promotions;
+import com.pwdk.grocereach.promotion.infrastructure.repositories.PromotionRepository;
 import com.pwdk.grocereach.store.domains.entities.Stores;
 import com.pwdk.grocereach.store.domains.entities.Warehouse;
 import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
 import com.pwdk.grocereach.store.infrastructures.repositories.WarehouseRepository;
+import com.pwdk.grocereach.store.infrastructures.repositories.impl.StoreRepoImpl;
+import com.pwdk.grocereach.store.infrastructures.repositories.impl.WarehouseRepoImpl;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Service
 public class ProductServiceImplementation implements ProductService {
@@ -39,74 +48,56 @@ public class ProductServiceImplementation implements ProductService {
   private final WarehouseRepository warehouseRepository;
   private final StoresRepository storesRepository;
   private final InventoryRepository inventoryRepository;
+  private final PromotionRepository promotionRepository;
+  private final ProductPromotionRepository productPromotionRepository;
+  private final ProductRepoImpl productRepoImpl;
+  private final StoreRepoImpl storeRepoImpl;
+  private final ProductCategoryRepoImpl productCategoryRepoImpl;
+  private final ProductVersionRepoImpl productVersionRepoImpl;
+  private final InventoryRepoImpl inventoryRepoImpl;
+  private final WarehouseRepoImpl warehouseRepoImpl;
+  private final ProductPromotionRepoImpl productPromotionRepoImpl;
 
-  public ProductServiceImplementation (ProductRepository productRepository, ProductVersionRepository productVersionRepository, ProductCategoryRepository productCategoryRepository, WarehouseRepository warehouseRepository, StoresRepository storesRepository, InventoryRepository inventoryRepository) {
+  public ProductServiceImplementation (ProductRepository productRepository,
+                                       ProductVersionRepository productVersionRepository,
+                                       ProductCategoryRepository productCategoryRepository,
+                                       WarehouseRepository warehouseRepository,
+                                       StoresRepository storesRepository,
+                                       InventoryRepository inventoryRepository,
+                                       PromotionRepository promotionRepository,
+                                       ProductPromotionRepository productPromotionRepository, ProductRepoImpl productRepoImpl, StoreRepoImpl storeRepoImpl, ProductCategoryRepoImpl productCategoryRepoImpl, ProductVersionRepoImpl productVersionRepoImpl, InventoryRepoImpl inventoryRepoImpl, WarehouseRepoImpl warehouseRepoImpl, ProductPromotionRepoImpl productPromotionRepoImpl) {
     this.productRepository = productRepository;
     this.productVersionRepository = productVersionRepository;
     this.productCategoryRepository = productCategoryRepository;
     this.warehouseRepository = warehouseRepository;
     this.storesRepository = storesRepository;
     this.inventoryRepository = inventoryRepository;
+    this.productPromotionRepository = productPromotionRepository;
+    this.promotionRepository = promotionRepository;
+    this.productRepoImpl = productRepoImpl;
+    this.storeRepoImpl = storeRepoImpl;
+    this.productCategoryRepoImpl = productCategoryRepoImpl;
+    this.productVersionRepoImpl = productVersionRepoImpl;
+    this.inventoryRepoImpl = inventoryRepoImpl;
+    this.warehouseRepoImpl = warehouseRepoImpl;
+    this.productPromotionRepoImpl = productPromotionRepoImpl;
   }
 
   @Override
+  @Transactional
   public ProductResponse createProduct(CreateProductRequest request) {
-
-    //    Find existing product by name
-    Optional<Product> productOptional = productRepository.findByName(request.getName());
-
-    if (productOptional.isPresent()) {
-      throw new ProductAlreadyExistException("Product with the same name already exist!");
-    }
-
-    UUID categoryUUID = UUID.fromString(request.getCategoryID()); // get UUID from categoryID string
-
-    UUID storeUUID = UUID.fromString(request.getStoreID()); // get UUID from storeID string
-
-//    Find the category
-    ProductCategory category = productCategoryRepository.findById(categoryUUID).orElseThrow(() -> new ProductNotFoundException("Category not found!"));
-    Stores store = storesRepository.findById(storeUUID).orElseThrow(() -> new StoreNotFoundException("Store not found!"));
-
-//    Create product first & save to DB *without product version
-    Product product = Product.builder()
-        .name(request.getName())
-        .description(request.getDescription())
-        .isActive(true)
-        .category(category)
-        .store(store)
-        .build();
-    productRepository.save(product);
-
-//    Create the product version & save it to DB
-    ProductVersions versions = ProductVersions.builder()
-        .product(product)
-        .price(request.getPrice())
-        .weight(request.getWeight())
-        .versionNumber(1) // set to become first version
-        .changeReason("New product") // for creating new product
-        .effectiveFrom(Instant.now())
-        .build();
-    productVersionRepository.save(versions);
-
-    product.setCurrentVersion(versions); //set the version to product
-    productRepository.save(product);
+    ProductCategory category = productCategoryRepoImpl.findCategoryByID(request.getCategoryID());
+    Stores store = storeRepoImpl.findStoreByID(request.getStoreID());
+    Product product = productRepoImpl.createProduct(request, category, store);
+    ProductVersions version = productVersionRepoImpl.createNewVersion(request, product);
 
     request.getInventories().forEach(inventoryReq -> {
-      UUID warehouseUUID = UUID.fromString(inventoryReq.getWarehouseID());
-      Warehouse warehouse = warehouseRepository.findById(warehouseUUID)
-          .orElseThrow(() -> new WarehouseNotFoundException("Warehouse not found!"));
-
-      Inventory inventory = Inventory.builder()
-          .warehouse(warehouse)
-          .productVersion(versions)
-          .stock(inventoryReq.getStock())
-          .journal("+" + inventoryReq.getStock())
-          .build();
-
-      inventoryRepository.save(inventory);
+      Warehouse warehouse = warehouseRepoImpl.findWarehouseByID(inventoryReq.getWarehouseID());
+      Inventory inventory = inventoryRepoImpl.buildNewInventory(warehouse, inventoryReq.getStock(), version);
+      inventoryRepoImpl.saveInventory(inventory);
     });
 
-
+    productPromotionRepoImpl.createProductPromotions(request.getPromotions(), product);
 
     return ProductResponse.from(product);
   }
@@ -177,6 +168,20 @@ public class ProductServiceImplementation implements ProductService {
 //    Set effective to for unused version to now
     currentVersion.setEffectiveTo(Instant.now());
 
+    Set<ProductPromotions> promotions = currentProduct.getProductPromotions();
+
+    request.getPromotions().forEach((promotionRequest) -> {
+      UUID promotionID = UUID.fromString(promotionRequest.getPromotionID());
+      Promotions promotion = promotionRepository.findById(promotionID).orElseThrow(() -> new RuntimeException("Promotion not found!"));
+      ProductPromotions productPromotion = new ProductPromotions();
+      productPromotion.setPromotion(promotion);
+      productPromotion.setProduct(currentProduct);
+      promotions.add(productPromotion);
+    });
+
+    productPromotionRepository.saveAll(promotions);
+
+    currentProduct.setProductPromotions(promotions);
     currentProduct.setCurrentVersion(newVersion);
     currentProduct.setUpdatedAt(Instant.now());
 

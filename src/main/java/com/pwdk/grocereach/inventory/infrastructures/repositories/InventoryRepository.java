@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -26,12 +28,13 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
         "AND i.created_at < :endDate " +
         "ORDER BY p.name, pv.version_number, i.created_at",
         nativeQuery = true)
-    List<Inventory> findInventoryHistoryForReport(
+    Page<Inventory> findInventoryHistoryForReport(
         @Param("storeId") UUID storeId,
         @Param("warehouseId") UUID warehouseId,
         @Param("productName") String productName,
         @Param("startDate") Instant startDate,
-        @Param("endDate") Instant endDate
+        @Param("endDate") Instant endDate,
+        Pageable pageable
     );
 
     @Query("SELECT i FROM Inventory i " +
@@ -45,11 +48,12 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
         "AND i.createdAt >= :startDate " +
         "AND i.createdAt < :endDate " +
         "ORDER BY p.name, pv.versionNumber")
-    List<Inventory> findCurrentInventoryForReport(
+    Page<Inventory> findCurrentInventoryForReport(
         @Param("storeId") UUID storeId,
         @Param("warehouseId") UUID warehouseId,
         @Param("productName") String productName,
         @Param("startDate") Instant startDate,
-        @Param("endDate") Instant endDate
+        @Param("endDate") Instant endDate,
+        Pageable pageable
     );
 }

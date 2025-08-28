@@ -65,27 +65,4 @@ public class PromotionServiceImplementation implements PromotionService {
 
     return PaginatedResponse.Utils.from(promotions, promotionResponses);
   }
-
-  @Override
-  public ProductResponse attachPromotion(UUID productID, UUID promotionID) {
-    Product product = productRepository.findById(productID).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
-    Promotions promotion = promotionRepository.findById(promotionID).orElseThrow(() -> new RuntimeException("Promotion not found!"));
-
-//    Create new product promotion
-    ProductPromotions productPromotions = new ProductPromotions();
-    productPromotions.setProduct(product);
-    productPromotions.setPromotion(promotion);
-
-    productPromotionRepository.save(productPromotions);
-
-    List<ProductPromotions> promotions = product.getProductPromotions();
-    promotions.add(productPromotions);
-
-    product.setProductPromotions(promotions);
-
-    productRepository.save(product);
-
-    return ProductResponse.from(product);
-  }
-
 }

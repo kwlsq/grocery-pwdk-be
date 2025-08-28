@@ -4,6 +4,9 @@ import java.time.YearMonth;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -33,16 +36,20 @@ public class StockReportController {
     private final YearMonthConverter yearMonthConverter;
 
     @GetMapping("/summary")
-    public ResponseEntity<Response<List<StockReportSummaryResponse>>> getMonthlyStockSummary(
+    public ResponseEntity<?> getMonthlyStockSummary(
             @RequestParam(required = false, value = "storeId", defaultValue = "") UUID storeId,
             @RequestParam(required = false, value = "warehouseId", defaultValue = "") UUID warehouseId,
             @RequestParam(required = false, value = "month", defaultValue = "") String month,
-            @RequestParam(required = false, value = "productName" , defaultValue = "") String productName) {
+            @RequestParam(required = false, value = "productName" , defaultValue = "") String productName,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
         
         try {
             UUID userStoreId = getUserStoreId();
 
             YearMonth yearMonth = month != null ? yearMonthConverter.convert(month) : null;
+
+            Pageable pageable = PageRequest.of(page,size);
             
             StockReportRequest request = StockReportRequest.builder()
                     .storeId(storeId)
@@ -51,9 +58,10 @@ public class StockReportController {
                     .productName(productName)
                     .build();
             
-            List<StockReportSummaryResponse> summary = stockReportService.getMonthlyStockSummary(request, userStoreId);
-            
-            return Response.successfulResponse("Stock summary report retrieved successfully", summary);
+            return Response.successfulResponse(
+                "Stock summary report retrieved successfully",
+                stockReportService.getMonthlyStockSummary(request, userStoreId, pageable)
+                );
                     
         } catch (Exception e) {
             log.error("Error retrieving stock summary report", e);
@@ -63,16 +71,20 @@ public class StockReportController {
 
     @GetMapping("/detail")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<Response<List<StockReportDetailResponse>>> getMonthlyStockDetail(
+    public ResponseEntity<?> getMonthlyStockDetail(
         @RequestParam(required = false, value = "storeId", defaultValue = "") UUID storeId,
         @RequestParam(required = false, value = "warehouseId", defaultValue = "") UUID warehouseId,
         @RequestParam(required = false, value = "month", defaultValue = "") String month,
-        @RequestParam(required = false, value = "productName" , defaultValue = "") String productName) {
+        @RequestParam(required = false, value = "productName" , defaultValue = "") String productName,
+        @RequestParam(value = "page", defaultValue = "0") int page,
+        @RequestParam(value = "size", defaultValue = "10") int size) {
         
         try {
             UUID userStoreId = getUserStoreId();
 
             YearMonth yearMonth = month != null ? yearMonthConverter.convert(month) : null;
+
+            Pageable pageable = PageRequest.of(page, size);
             
             StockReportRequest request = StockReportRequest.builder()
                     .storeId(storeId)
@@ -80,10 +92,11 @@ public class StockReportController {
                     .month(yearMonth)
                     .productName(productName)
                     .build();
-            
-            List<StockReportDetailResponse> detail = stockReportService.getMonthlyStockDetail(request, userStoreId);
-            
-            return Response.successfulResponse("Stock detail report retrieved successfully", detail);
+
+            return Response.successfulResponse(
+                "Stock detail report retrieved successfully",
+                stockReportService.getMonthlyStockDetail(request, userStoreId, pageable)
+                );
                     
         } catch (Exception e) {
             log.error("Error retrieving stock detail report", e);
