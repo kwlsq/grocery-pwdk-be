@@ -1,6 +1,7 @@
 package com.pwdk.grocereach.product.presentations;
 
 import com.pwdk.grocereach.common.Response;
+import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
@@ -10,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -98,6 +100,15 @@ public class ProductRestController {
     UUID uuid = UUID.fromString(id);
     productService.deleteProduct(uuid);
     return Response.successfulResponse("Delete product success!");
+  }
+
+  @PatchMapping("/stocks/{id}")
+  public ResponseEntity<?> updateProductStock(@RequestBody List<WarehouseStock> inventories, @PathVariable String id) {
+    UUID uuid = UUID.fromString(id);
+    return Response.successfulResponse(
+        "Successfully update product stock",
+        productService.updateProductStock(uuid, inventories)
+    );
   }
 
   private Sort.Order getSortOrder(String sortBy, String sortDirection) {

@@ -8,6 +8,7 @@ import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Component
 public class ProductVersionRepoImpl {
@@ -20,6 +21,12 @@ public class ProductVersionRepoImpl {
     this.productVersionRepository = productVersionRepository;
     this.productRepository = productRepository;
     this.productRepoImpl = productRepoImpl;
+  }
+
+  public ProductVersions findVersionByID(UUID id) {
+    return productVersionRepository.findById(id).orElseThrow(() -> (
+        new RuntimeException("Version not found")
+        ));
   }
 
   public ProductVersions createNewVersion(CreateProductRequest request, Product product) {
@@ -51,4 +58,5 @@ public class ProductVersionRepoImpl {
       throw new RuntimeException("Failed to save product version: " + e.getMessage());
     }
   }
+
 }

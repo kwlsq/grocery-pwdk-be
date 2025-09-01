@@ -1,7 +1,19 @@
 package com.pwdk.grocereach.product.applications.impl;
 
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
+import com.pwdk.grocereach.store.domains.entities.Warehouse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.pwdk.grocereach.common.PaginatedResponse;
-import com.pwdk.grocereach.common.exception.*;
+import com.pwdk.grocereach.common.exception.MissingParameterException;
+import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepository;
 import com.pwdk.grocereach.inventory.infrastructures.repositories.impl.InventoryRepoImpl;
@@ -26,18 +38,10 @@ import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
 import com.pwdk.grocereach.promotion.domain.entities.Promotions;
 import com.pwdk.grocereach.promotion.infrastructure.repositories.PromotionRepository;
 import com.pwdk.grocereach.store.domains.entities.Stores;
-import com.pwdk.grocereach.store.domains.entities.Warehouse;
 import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
 import com.pwdk.grocereach.store.infrastructures.repositories.WarehouseRepository;
 import com.pwdk.grocereach.store.infrastructures.repositories.impl.StoreRepoImpl;
 import com.pwdk.grocereach.store.infrastructures.repositories.impl.WarehouseRepoImpl;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Instant;
-import java.util.*;
 
 @Service
 public class ProductServiceImplementation implements ProductService {
@@ -91,15 +95,16 @@ public class ProductServiceImplementation implements ProductService {
     Product product = productRepoImpl.createProduct(request, category, store);
     ProductVersions version = productVersionRepoImpl.createNewVersion(request, product);
 
-    request.getInventories().forEach(inventoryReq -> {
-      Warehouse warehouse = warehouseRepoImpl.findWarehouseByID(inventoryReq.getWarehouseID());
-      Inventory inventory = inventoryRepoImpl.buildNewInventory(warehouse, inventoryReq.getStock(), version);
-      inventoryRepoImpl.saveInventory(inventory);
-    });
+    inventoryRepoImpl.createProductInventory(request.getInventories(), version, product); // Create and save inventories
+
+    ProductVersions refreshedVersion = productVersionRepoImpl.findVersionByID(version.getId()); // Refresh the product version to get the latest state with inventories
+
+    product.setCurrentVersion(refreshedVersion); // Set the refreshed version with inventories back to the product
+    productRepository.save(product);
 
     productPromotionRepoImpl.createProductPromotions(request.getPromotions(), product);
 
-    return ProductResponse.from(product);
+    return ProductResponse.from(productRepoImpl.findProductByID(product.getId()));
   }
 
   @Override
@@ -229,6 +234,51 @@ public class ProductServiceImplementation implements ProductService {
 
     return PaginatedResponse.Utils.from(page, filteredResponses);
   }
+
+  @Override
+  public ProductResponse updateProductStock(UUID productID, List<WarehouseStock> warehouseStocks) {
+    Product product = productRepoImpl.findProductByID(productID);
+    ProductVersions version = product.getCurrentVersion();
+
+    List<Inventory> existingInventories = version.getInventories();
+    Map<UUID, Inventory> existingInventoryMap = existingInventories.stream()
+        .collect(Collectors.toMap(inv -> inv.getWarehouse().getId(), inv -> inv));
+
+    for (WarehouseStock warehouseStock : warehouseStocks) {
+      UUID warehouseID = UUID.fromString(warehouseStock.getWarehouseID());
+      Warehouse warehouse = warehouseRepoImpl.findWarehouseByID(warehouseStock.getWarehouseID());
+
+      Inventory inventory = existingInventoryMap.get(warehouseID);
+
+      if (inventory != null) {
+        // Update existing inventory
+        Integer oldStock = inventory.getStock();
+        Integer newStock = warehouseStock.getStock();
+        Integer stockDifference = newStock - oldStock;
+
+        if (!oldStock.equals(newStock)) {
+          inventory.setStock(newStock);
+          inventory.setJournal((stockDifference > 0 ? "+" : "-") + stockDifference);
+        }
+      } else {
+        // Create new inventory if it doesn't exist
+        inventory = new Inventory();
+        inventory.setProductVersion(version);
+        inventory.setWarehouse(warehouse);
+        inventory.setStock(warehouseStock.getStock());
+        inventory.setJournal("+");
+
+        inventoryRepoImpl.saveInventory(inventory);
+        existingInventories.add(inventory);
+      }
+    }
+
+    version.setInventories(existingInventories);
+    productVersionRepoImpl.saveProductVersion(version);
+
+    return ProductResponse.from(product);
+  }
+
 
   private double haversine(double lat1, double lon1, double lat2, double lon2) {
     final int R = 6371; // km

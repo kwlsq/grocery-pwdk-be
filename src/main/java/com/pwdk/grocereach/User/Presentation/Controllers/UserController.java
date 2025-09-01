@@ -96,7 +96,8 @@ public class UserController {
         );
     }
 
-    @DeleteMapping("/store-admin/:{id}")
+    @DeleteMapping("/store-admin/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> removeStoreAdmin(@PathVariable String id) {
         UUID uuid = UUID.fromString(id);
         userService.deleteStoreAdmin(uuid);

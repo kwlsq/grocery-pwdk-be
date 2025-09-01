@@ -45,6 +45,10 @@ public class ProductRepoImpl {
         .build();
   }
 
+  public Product findProductByID(UUID id) {
+    return productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
+  }
+
   public Product saveProduct(Product product) {
     try {
       return productRepository.save(product);
@@ -52,4 +56,6 @@ public class ProductRepoImpl {
       throw new RuntimeException("Failed to save product: " + e.getMessage());
     }
   }
+
+
 }

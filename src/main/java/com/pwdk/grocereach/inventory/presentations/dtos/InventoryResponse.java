@@ -19,7 +19,7 @@ public class InventoryResponse {
   public static InventoryResponse from(Inventory inventory)  {
     return new InventoryResponse(
         inventory.getStock(),
-        inventory.getId(),
+        inventory.getWarehouse().getId(),
         inventory.getWarehouse().getLatitude(),
         inventory.getWarehouse().getLongitude()
     );
