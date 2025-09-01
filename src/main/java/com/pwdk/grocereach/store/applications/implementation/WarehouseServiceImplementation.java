@@ -1,12 +1,16 @@
 package com.pwdk.grocereach.store.applications.implementation;
 
 import com.pwdk.grocereach.common.PaginatedResponse;
+import com.pwdk.grocereach.common.exception.StoreNotFoundException;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
 import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.store.applications.WarehouseServices;
+import com.pwdk.grocereach.store.domains.entities.Stores;
 import com.pwdk.grocereach.store.domains.entities.Warehouse;
+import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
 import com.pwdk.grocereach.store.infrastructures.repositories.WarehouseRepository;
+import com.pwdk.grocereach.store.presentations.dtos.CreateWarehouseRequest;
 import com.pwdk.grocereach.store.presentations.dtos.WarehouseResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,9 +23,11 @@ import java.util.UUID;
 public class WarehouseServiceImplementation implements WarehouseServices {
 
   private final WarehouseRepository warehouseRepository;
+  private final StoresRepository storesRepository;
 
-  public WarehouseServiceImplementation(WarehouseRepository warehouseRepository) {
+  public WarehouseServiceImplementation(WarehouseRepository warehouseRepository, StoresRepository storesRepository) {
     this.warehouseRepository = warehouseRepository;
+    this.storesRepository = storesRepository;
   }
 
   @Override
@@ -37,5 +43,25 @@ public class WarehouseServiceImplementation implements WarehouseServices {
 
     // Return paginated response (metadata based on original page)
     return PaginatedResponse.Utils.from(page, filteredResponses);
+  }
+
+  @Override
+  public WarehouseResponse createWarehouse(CreateWarehouseRequest request) {
+
+    UUID storeID = UUID.fromString(request.getStoreID());
+
+    Stores store = storesRepository.findById(storeID).orElseThrow(() -> new StoreNotFoundException("Store not found!"));
+
+    Warehouse warehouse = new Warehouse();
+    warehouse.setName(request.getName());
+    warehouse.setAddress(request.getAddress());
+    warehouse.setActive(true);
+    warehouse.setLatitude(request.getLatitude());
+    warehouse.setLongitude(request.getLongitude());
+    warehouse.setStore(store);
+
+    warehouseRepository.save(warehouse);
+
+    return WarehouseResponse.from(warehouse);
   }
 }
