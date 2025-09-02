@@ -46,6 +46,16 @@ public class InventoryRepoImpl {
         .build();
   }
 
+  public Inventory buildNewInventory(Warehouse warehouse, Integer stock, ProductVersions version, String journal) {
+    return Inventory.builder()
+        .warehouse(warehouse)
+        .productVersion(version)
+        .stock(stock)
+        .journal(journal)
+        .build();
+  }
+
+
   public Inventory saveInventory(Inventory inventory) {
     try {
       return inventoryRepository.save(inventory);

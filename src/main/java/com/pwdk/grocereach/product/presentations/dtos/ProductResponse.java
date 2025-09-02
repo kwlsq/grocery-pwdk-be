@@ -18,6 +18,7 @@ public class ProductResponse {
   private UUID id;
   private String name;
   private String description;
+  private UUID categoryID;
   private ProductVersionResponse productVersionResponse;
   private List<ProductImageResponse> productImages;
   private List<PromotionResponse> promotions;
@@ -27,6 +28,7 @@ public class ProductResponse {
         product.getId(),
         product.getName(),
         product.getDescription(),
+        product.getCategory().getId(),
         ProductVersionResponse.from(product.getCurrentVersion()),
         product.getProductImages() != null ? product.getProductImages().stream()
             .map(ProductImageResponse::from)

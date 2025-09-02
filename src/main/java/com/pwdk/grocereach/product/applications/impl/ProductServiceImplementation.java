@@ -4,8 +4,6 @@ import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
-import com.pwdk.grocereach.store.domains.entities.Warehouse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -15,8 +13,8 @@ import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.common.exception.MissingParameterException;
 import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.inventory.domains.entities.Inventory;
-import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepository;
 import com.pwdk.grocereach.inventory.infrastructures.repositories.impl.InventoryRepoImpl;
+import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductCategory;
@@ -38,8 +36,7 @@ import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
 import com.pwdk.grocereach.promotion.domain.entities.Promotions;
 import com.pwdk.grocereach.promotion.infrastructure.repositories.PromotionRepository;
 import com.pwdk.grocereach.store.domains.entities.Stores;
-import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
-import com.pwdk.grocereach.store.infrastructures.repositories.WarehouseRepository;
+import com.pwdk.grocereach.store.domains.entities.Warehouse;
 import com.pwdk.grocereach.store.infrastructures.repositories.impl.StoreRepoImpl;
 import com.pwdk.grocereach.store.infrastructures.repositories.impl.WarehouseRepoImpl;
 
@@ -49,9 +46,6 @@ public class ProductServiceImplementation implements ProductService {
   private final ProductRepository productRepository;
   private final ProductVersionRepository productVersionRepository;
   private final ProductCategoryRepository productCategoryRepository;
-  private final WarehouseRepository warehouseRepository;
-  private final StoresRepository storesRepository;
-  private final InventoryRepository inventoryRepository;
   private final PromotionRepository promotionRepository;
   private final ProductPromotionRepository productPromotionRepository;
   private final ProductRepoImpl productRepoImpl;
@@ -65,17 +59,11 @@ public class ProductServiceImplementation implements ProductService {
   public ProductServiceImplementation (ProductRepository productRepository,
                                        ProductVersionRepository productVersionRepository,
                                        ProductCategoryRepository productCategoryRepository,
-                                       WarehouseRepository warehouseRepository,
-                                       StoresRepository storesRepository,
-                                       InventoryRepository inventoryRepository,
                                        PromotionRepository promotionRepository,
                                        ProductPromotionRepository productPromotionRepository, ProductRepoImpl productRepoImpl, StoreRepoImpl storeRepoImpl, ProductCategoryRepoImpl productCategoryRepoImpl, ProductVersionRepoImpl productVersionRepoImpl, InventoryRepoImpl inventoryRepoImpl, WarehouseRepoImpl warehouseRepoImpl, ProductPromotionRepoImpl productPromotionRepoImpl) {
     this.productRepository = productRepository;
     this.productVersionRepository = productVersionRepository;
     this.productCategoryRepository = productCategoryRepository;
-    this.warehouseRepository = warehouseRepository;
-    this.storesRepository = storesRepository;
-    this.inventoryRepository = inventoryRepository;
     this.productPromotionRepository = productPromotionRepository;
     this.promotionRepository = promotionRepository;
     this.productRepoImpl = productRepoImpl;
@@ -155,38 +143,52 @@ public class ProductServiceImplementation implements ProductService {
 
   @Override
   public ProductResponse updateProduct(UUID id, UpdateProductRequest request) {
-    Product currentProduct = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
+    Product currentProduct = productRepoImpl.findProductByID(id);
 
     ProductVersions currentVersion = currentProduct.getCurrentVersion();
 
-    //    Create new product version
-    ProductVersions newVersion = ProductVersions.builder()
-        .product(currentProduct)
-        .price(request.getPrice() != null ? request.getPrice() : currentVersion.getPrice())
-        .weight(request.getWeight() != null ? request.getWeight() : currentVersion.getWeight())
-        .versionNumber(currentProduct.getCurrentVersion().getVersionNumber() + 1)
-        .changeReason(request.getChangeReason() != null ? request.getChangeReason() : "Changed by API endpoint!")
-        .effectiveFrom(Instant.now())
-        .build();
+    currentProduct.setName(request.getName() != null ? request.getName() : currentProduct.getName());
+    currentProduct.setDescription(request.getDescription() != null ? request.getDescription() : currentProduct.getDescription());
+
+    List<Inventory> copiedInventories = null;
+    if (currentVersion.getInventories() != null) {
+      copiedInventories = currentVersion.getInventories().stream()
+          .map(oldInventory -> Inventory.builder()
+              .stock(oldInventory.getStock())
+              .journal("Version migration: " + oldInventory.getJournal())
+              .warehouse(oldInventory.getWarehouse())
+              .build())
+          .collect(Collectors.toList());
+    }
+
+// Create new product version
+    ProductVersions newVersion = productVersionRepoImpl.buildNewProductVersion(request, currentProduct, copiedInventories, currentVersion);
+
+// Set the product version reference for each copied inventory
+    if (copiedInventories != null) {
+      copiedInventories.forEach(inventory -> inventory.setProductVersion(newVersion));
+    }
+
     productVersionRepository.save(newVersion);
 
 //    Set effective to for unused version to now
     currentVersion.setEffectiveTo(Instant.now());
 
-    Set<ProductPromotions> promotions = currentProduct.getProductPromotions();
 
-    request.getPromotions().forEach((promotionRequest) -> {
-      UUID promotionID = UUID.fromString(promotionRequest.getPromotionID());
-      Promotions promotion = promotionRepository.findById(promotionID).orElseThrow(() -> new RuntimeException("Promotion not found!"));
-      ProductPromotions productPromotion = new ProductPromotions();
-      productPromotion.setPromotion(promotion);
-      productPromotion.setProduct(currentProduct);
-      promotions.add(productPromotion);
-    });
+    if (request.getPromotions() != null) {
+      Set<ProductPromotions> promotions = currentProduct.getProductPromotions();
+      request.getPromotions().forEach((promotionRequest) -> {
+        UUID promotionID = UUID.fromString(promotionRequest.getPromotionID());
+        Promotions promotion = promotionRepository.findById(promotionID).orElseThrow(() -> new RuntimeException("Promotion not found!"));
+        ProductPromotions productPromotion = new ProductPromotions();
+        productPromotion.setPromotion(promotion);
+        productPromotion.setProduct(currentProduct);
+        promotions.add(productPromotion);
+      });
 
-    productPromotionRepository.saveAll(promotions);
-
-    currentProduct.setProductPromotions(promotions);
+      productPromotionRepository.saveAll(promotions);
+      currentProduct.setProductPromotions(promotions);
+    }
     currentProduct.setCurrentVersion(newVersion);
     currentProduct.setUpdatedAt(Instant.now());
 
@@ -240,45 +242,59 @@ public class ProductServiceImplementation implements ProductService {
     Product product = productRepoImpl.findProductByID(productID);
     ProductVersions version = product.getCurrentVersion();
 
-    List<Inventory> existingInventories = version.getInventories();
-    Map<UUID, Inventory> existingInventoryMap = existingInventories.stream()
-        .collect(Collectors.toMap(inv -> inv.getWarehouse().getId(), inv -> inv));
+    // Map existing inventories by warehouse ID - POPULATE WITH CURRENT DATA
+    Map<UUID, Inventory> inventoryMap = new HashMap<>();
+    if (version.getInventories() != null) {
+      version.getInventories().forEach(inv ->
+          inventoryMap.put(inv.getWarehouse().getId(), inv)
+      );
+    }
 
     for (WarehouseStock warehouseStock : warehouseStocks) {
       UUID warehouseID = UUID.fromString(warehouseStock.getWarehouseID());
       Warehouse warehouse = warehouseRepoImpl.findWarehouseByID(warehouseStock.getWarehouseID());
 
-      Inventory inventory = existingInventoryMap.get(warehouseID);
+      Inventory newInventory;
+      if (!inventoryMap.containsKey(warehouseID)) {
+        // New warehouse → add inventory with journal "+"
+        newInventory = inventoryRepoImpl.buildNewInventory(warehouse, warehouseStock.getStock(), version);
 
-      if (inventory != null) {
-        // Update existing inventory
-        Integer oldStock = inventory.getStock();
+        inventoryMap.put(warehouseID, newInventory);
+        inventoryRepoImpl.saveInventory(newInventory);
+      } else {
+        Inventory existingInventory = inventoryMap.get(warehouseID);
+        Integer oldStock = existingInventory.getStock();
         Integer newStock = warehouseStock.getStock();
-        Integer stockDifference = newStock - oldStock;
 
         if (!oldStock.equals(newStock)) {
-          inventory.setStock(newStock);
-          inventory.setJournal((stockDifference > 0 ? "+" : "-") + stockDifference);
-        }
-      } else {
-        // Create new inventory if it doesn't exist
-        inventory = new Inventory();
-        inventory.setProductVersion(version);
-        inventory.setWarehouse(warehouse);
-        inventory.setStock(warehouseStock.getStock());
-        inventory.setJournal("+");
+          // Soft delete the old inventory
+          existingInventory.setDeletedAt(Instant.now());
+          inventoryRepoImpl.saveInventory(existingInventory);
 
-        inventoryRepoImpl.saveInventory(inventory);
-        existingInventories.add(inventory);
+          // Create new inventory with the CORRECT difference calculation
+          int difference = newStock - oldStock;
+          String journal = difference > 0 ? "+" + difference : "" + difference; // No need for Math.abs since difference can be negative
+
+          newInventory = inventoryRepoImpl.buildNewInventory(warehouse, newStock, version, journal);
+
+          inventoryMap.replace(warehouseID, newInventory);
+          inventoryRepoImpl.saveInventory(newInventory);
+        }
+        // If stocks are equal, do nothing (no update needed)
       }
     }
 
-    version.setInventories(existingInventories);
+    List<Inventory> latestInventories = new ArrayList<>(inventoryMap.values());
+
+    version.setInventories(latestInventories);
     productVersionRepoImpl.saveProductVersion(version);
+
+    ProductVersions currentVersion = productVersionRepoImpl.findVersionByID(version.getId());
+    product.setCurrentVersion(currentVersion);
+    productRepoImpl.saveProduct(product);
 
     return ProductResponse.from(product);
   }
-
 
   private double haversine(double lat1, double lon1, double lat2, double lon2) {
     final int R = 6371; // km

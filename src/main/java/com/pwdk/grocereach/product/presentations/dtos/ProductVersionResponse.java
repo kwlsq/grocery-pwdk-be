@@ -1,15 +1,14 @@
 package com.pwdk.grocereach.product.presentations.dtos;
 
-import com.pwdk.grocereach.inventory.domains.entities.Inventory;
+import java.math.BigDecimal;
+import java.util.List;
+
 import com.pwdk.grocereach.inventory.presentations.dtos.InventoryResponse;
 import com.pwdk.grocereach.product.domains.entities.ProductVersions;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
 
 @Data
 @NoArgsConstructor

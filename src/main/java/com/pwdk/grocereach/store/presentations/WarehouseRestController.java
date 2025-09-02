@@ -6,6 +6,7 @@ import com.pwdk.grocereach.store.presentations.dtos.CreateWarehouseRequest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -21,6 +22,7 @@ public class WarehouseRestController {
   }
 
   @GetMapping("/{storeID}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<?> getAllWarehouse(@PathVariable String storeID,
                                            @RequestParam(value = "page", defaultValue = "0") int page,
                                            @RequestParam(value = "size", defaultValue = "10") int size) {
@@ -35,6 +37,7 @@ public class WarehouseRestController {
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> createWarehouse(@RequestBody CreateWarehouseRequest request) {
     return Response.successfulResponse(
         "Successfully create warehouse",

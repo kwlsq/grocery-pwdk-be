@@ -1,10 +1,11 @@
 package com.pwdk.grocereach.inventory.presentations;
 
 import java.time.YearMonth;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.pwdk.grocereach.common.Response;
 import com.pwdk.grocereach.inventory.applications.StockReportService;
-import com.pwdk.grocereach.inventory.presentations.dtos.StockReportDetailResponse;
+import com.pwdk.grocereach.inventory.domains.entities.Inventory;
+import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepository;
 import com.pwdk.grocereach.inventory.presentations.dtos.StockReportRequest;
-import com.pwdk.grocereach.inventory.presentations.dtos.StockReportSummaryResponse;
 import com.pwdk.grocereach.inventory.presentations.dtos.YearMonthConverter;
 
 import lombok.RequiredArgsConstructor;
@@ -34,20 +35,22 @@ public class StockReportController {
 
     private final StockReportService stockReportService;
     private final YearMonthConverter yearMonthConverter;
+    private final InventoryRepository inventoryRepository;
 
     @GetMapping("/summary")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     public ResponseEntity<?> getMonthlyStockSummary(
-            @RequestParam(required = false, value = "storeId", defaultValue = "") UUID storeId,
-            @RequestParam(required = false, value = "warehouseId", defaultValue = "") UUID warehouseId,
-            @RequestParam(required = false, value = "month", defaultValue = "") String month,
-            @RequestParam(required = false, value = "productName" , defaultValue = "") String productName,
+            @RequestParam(required = false, value = "storeId") UUID storeId,
+            @RequestParam(required = false, value = "warehouseId") UUID warehouseId,
+            @RequestParam(required = false, value = "month") String month,
+            @RequestParam(required = false, value = "productName") String productName,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
         
         try {
             UUID userStoreId = getUserStoreId();
 
-            YearMonth yearMonth = month != null ? yearMonthConverter.convert(month) : null;
+            YearMonth yearMonth = month != null && !month.trim().isEmpty() ? yearMonthConverter.convert(month) : null;
 
             Pageable pageable = PageRequest.of(page,size);
             
@@ -55,7 +58,7 @@ public class StockReportController {
                     .storeId(storeId)
                     .warehouseId(warehouseId)
                     .month(yearMonth)
-                    .productName(productName)
+                    .productName(productName != null && !productName.trim().isEmpty() ? productName.trim() : null)
                     .build();
             
             return Response.successfulResponse(
@@ -72,17 +75,17 @@ public class StockReportController {
     @GetMapping("/detail")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<?> getMonthlyStockDetail(
-        @RequestParam(required = false, value = "storeId", defaultValue = "") UUID storeId,
-        @RequestParam(required = false, value = "warehouseId", defaultValue = "") UUID warehouseId,
-        @RequestParam(required = false, value = "month", defaultValue = "") String month,
-        @RequestParam(required = false, value = "productName" , defaultValue = "") String productName,
+        @RequestParam(required = false, value = "storeId") UUID storeId,
+        @RequestParam(required = false, value = "warehouseId") UUID warehouseId,
+        @RequestParam(required = false, value = "month") String month,
+        @RequestParam(required = false, value = "productName") String productName,
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "size", defaultValue = "10") int size) {
         
         try {
             UUID userStoreId = getUserStoreId();
 
-            YearMonth yearMonth = month != null ? yearMonthConverter.convert(month) : null;
+            YearMonth yearMonth = month != null && !month.trim().isEmpty() ? yearMonthConverter.convert(month) : null;
 
             Pageable pageable = PageRequest.of(page, size);
             
@@ -90,7 +93,7 @@ public class StockReportController {
                     .storeId(storeId)
                     .warehouseId(warehouseId)
                     .month(yearMonth)
-                    .productName(productName)
+                    .productName(productName != null && !productName.trim().isEmpty() ? productName.trim() : null)
                     .build();
 
             return Response.successfulResponse(
@@ -119,5 +122,35 @@ public class StockReportController {
             }
         }
         return null;
+    }
+
+    // Debug endpoint to test inventory data
+    @GetMapping("/debug")
+    public ResponseEntity<?> debugInventoryData() {
+        try {
+            long totalCount = inventoryRepository.countAllActiveInventory();
+            List<Inventory> allInventory = inventoryRepository.findInventoryWithoutDateFilter(null, null, null);
+            
+            Map<String, Object> debugInfo = new HashMap<>();
+            debugInfo.put("totalInventoryCount", totalCount);
+            debugInfo.put("inventoryWithoutDateFilter", allInventory.size());
+            
+            if (!allInventory.isEmpty()) {
+                debugInfo.put("firstRecordCreatedAt", allInventory.get(0).getCreatedAt());
+                debugInfo.put("lastRecordCreatedAt", allInventory.get(allInventory.size() - 1).getCreatedAt());
+                debugInfo.put("sampleRecord", Map.of(
+                    "id", allInventory.get(0).getId(),
+                    "stock", allInventory.get(0).getStock(),
+                    "warehouseId", allInventory.get(0).getWarehouse().getId(),
+                    "productVersionId", allInventory.get(0).getProductVersion().getId(),
+                    "productName", allInventory.get(0).getProductVersion().getProduct().getName()
+                ));
+            }
+            
+            return Response.successfulResponse("Debug information retrieved successfully", debugInfo);
+        } catch (Exception e) {
+            log.error("Error in debug endpoint", e);
+            return Response.failedResponse("Debug failed: " + e.getMessage());
+        }
     }
 }

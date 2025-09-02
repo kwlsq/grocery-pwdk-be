@@ -18,7 +18,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "product_version")
-@Filter(name = "deletedAtNull", condition = "deleted_at is null")
+@Filter(name = "deletedAtFilter", condition = "deleted_at is null")
 public class ProductVersions {
   @Id
   @GeneratedValue
