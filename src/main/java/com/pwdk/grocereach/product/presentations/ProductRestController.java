@@ -9,6 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -52,7 +53,8 @@ public class ProductRestController {
     );
   }
 
-  @GetMapping("/admin/{id}")
+  @GetMapping("/store/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<?> getProductsByStoreID(@PathVariable String id,
                                                 @RequestParam(value = "page", defaultValue = "0") int page,
                                                 @RequestParam(value = "size", defaultValue = "10") int size,
@@ -79,6 +81,7 @@ public class ProductRestController {
   }
 
   @PostMapping()
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> createProduct(@RequestBody CreateProductRequest request) {
     return Response.successfulResponse(
         "Product successfully created!",
@@ -87,6 +90,7 @@ public class ProductRestController {
   }
 
   @PatchMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> updateProduct(@PathVariable String id,@RequestBody UpdateProductRequest request) {
     UUID uuid = UUID.fromString(id);
     return Response.successfulResponse(
@@ -96,6 +100,7 @@ public class ProductRestController {
   }
 
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> deleteProduct(@PathVariable String id) {
     UUID uuid = UUID.fromString(id);
     productService.deleteProduct(uuid);
@@ -103,6 +108,7 @@ public class ProductRestController {
   }
 
   @PatchMapping("/stocks/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> updateProductStock(@RequestBody List<WarehouseStock> inventories, @PathVariable String id) {
     UUID uuid = UUID.fromString(id);
     return Response.successfulResponse(

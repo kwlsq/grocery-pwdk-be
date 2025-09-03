@@ -1,13 +1,16 @@
 package com.pwdk.grocereach.product.infrastructures.repositories.impl;
 
+import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductVersions;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductVersionRepository;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
+import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -43,6 +46,18 @@ public class ProductVersionRepoImpl {
         .versionNumber(1) // set to become first version
         .changeReason("New product") // for creating new product
         .effectiveFrom(Instant.now())
+        .build();
+  }
+
+  public ProductVersions buildNewProductVersion(UpdateProductRequest request, Product product, List<Inventory> inventories, ProductVersions currentVersion) {
+    return ProductVersions.builder()
+        .product(product)
+        .price(request.getPrice() != null ? request.getPrice() : currentVersion.getPrice())
+        .weight(request.getWeight() != null ? request.getWeight() : currentVersion.getWeight())
+        .versionNumber(product.getCurrentVersion().getVersionNumber() + 1)
+        .changeReason("Update product by admin")
+        .effectiveFrom(Instant.now())
+        .inventories(inventories)
         .build();
   }
 

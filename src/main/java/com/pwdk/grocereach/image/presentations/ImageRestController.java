@@ -3,6 +3,7 @@ package com.pwdk.grocereach.image.presentations;
 import com.pwdk.grocereach.common.Response;
 import com.pwdk.grocereach.image.applications.ImageService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -19,6 +20,7 @@ public class ImageRestController {
   }
 
   @PostMapping("/upload-single")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> uploadSingleImage(@RequestParam("file") MultipartFile file,
                                              @RequestParam("productID") String productID,
                                              @RequestParam("isPrimary") boolean isPrimary
@@ -31,6 +33,7 @@ public class ImageRestController {
   }
 
   @PostMapping("/upload-multi")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> uploadMultiImage(@RequestPart("file") MultipartFile[] file,
                                              @RequestParam("productID") String productID,
                                              @RequestParam("isPrimary") boolean isPrimary

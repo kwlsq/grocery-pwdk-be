@@ -7,6 +7,7 @@ import com.pwdk.grocereach.promotion.presentation.dto.CreatePromotionRequest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -22,6 +23,7 @@ public class PromotionRestController {
   }
 
   @GetMapping
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<?> getAllPromotions(@RequestParam(value = "page", defaultValue = "0") int page,
                                             @RequestParam(value = "size", defaultValue = "12") int size) {
 
@@ -34,6 +36,7 @@ public class PromotionRestController {
   }
 
   @PostMapping
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> createPromotion(@RequestBody CreatePromotionRequest request) {
     return Response.successfulResponse(
         "Successfully create promotion",

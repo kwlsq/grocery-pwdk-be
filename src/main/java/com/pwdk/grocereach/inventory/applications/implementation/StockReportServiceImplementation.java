@@ -5,23 +5,24 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.YearMonth;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.pwdk.grocereach.common.PaginatedResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.inventory.applications.StockReportService;
 import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepository;
 import com.pwdk.grocereach.inventory.presentations.dtos.StockReportDetailResponse;
 import com.pwdk.grocereach.inventory.presentations.dtos.StockReportRequest;
 import com.pwdk.grocereach.inventory.presentations.dtos.StockReportSummaryResponse;
-
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 public class StockReportServiceImplementation implements StockReportService {
@@ -34,11 +35,21 @@ public class StockReportServiceImplementation implements StockReportService {
 
     @Override
     public PaginatedResponse<StockReportSummaryResponse> getMonthlyStockSummary(StockReportRequest request, UUID userStoreId, Pageable pageable) {
-        YearMonth month = request.getMonth() != null ? request.getMonth() : YearMonth.now();
+        YearMonth month = request.getMonth() != null ? request.getMonth() : null;
+        
+        Instant startDate, endDate;
+        
+        if (month != null) {
+            // If specific month is requested, use that month's date range
+            startDate = month.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+            endDate = month.plusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        } else {
+            // If no month specified, show all records (from beginning of time to now)
+            startDate = Instant.EPOCH; // Beginning of time
+            endDate = Instant.now().plusSeconds(1); // Current time + 1 second
+        }
 
-        Instant startDate = month.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-        Instant endDate = month.plusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-
+        // Use userStoreId if available, otherwise use request.getStoreId(), otherwise null (no filter)
         UUID storeId = userStoreId != null ? userStoreId : request.getStoreId();
 
         Page<Inventory> inventoryPage = inventoryRepository.findInventoryHistoryForReport(
@@ -58,11 +69,31 @@ public class StockReportServiceImplementation implements StockReportService {
                 Inventory firstInv = productInventories.get(0);
 
                 int totalAddition = productInventories.stream()
-                    .mapToInt(inv -> inv.getStock() > 0 ? inv.getStock() : 0)
+                    .mapToInt(inv -> {
+                        String journal = inv.getJournal();
+                        if (journal != null && journal.startsWith("+")) {
+                            try {
+                                return Integer.parseInt(journal.substring(1));
+                            } catch (NumberFormatException e) {
+                                return 0;
+                            }
+                        }
+                        return 0;
+                    })
                     .sum();
 
                 int totalReduction = productInventories.stream()
-                    .mapToInt(inv -> inv.getStock() < 0 ? Math.abs(inv.getStock()) : 0)
+                    .mapToInt(inv -> {
+                        String journal = inv.getJournal();
+                        if (journal != null && journal.startsWith("-")) {
+                            try {
+                                return Integer.parseInt(journal.substring(1));
+                            } catch (NumberFormatException e) {
+                                return 0;
+                            }
+                        }
+                        return 0;
+                    })
                     .sum();
 
                 BigDecimal averagePrice = productInventories.stream()
@@ -75,10 +106,10 @@ public class StockReportServiceImplementation implements StockReportService {
                     .productVersion("v" + firstInv.getProductVersion().getVersionNumber())
                     .storeName(firstInv.getWarehouse().getStore().getStoreName())
                     .warehouseName(firstInv.getWarehouse().getName())
-                    .month(month)
+                    .month(month) // This will be null if showing all records
                     .totalAddition(totalAddition)
                     .totalReduction(totalReduction)
-                    .finalStock(firstInv.getStock()) // or latest stock logic
+                    .finalStock(firstInv.getStock()) // This is the final cumulative stock
                     .averagePrice(averagePrice)
                     .build();
             }).collect(Collectors.toList());
@@ -88,11 +119,20 @@ public class StockReportServiceImplementation implements StockReportService {
 
     @Override
     public PaginatedResponse<StockReportDetailResponse> getMonthlyStockDetail(StockReportRequest request, UUID userStoreId, Pageable pageable) {
-        YearMonth month = request.getMonth() != null ? request.getMonth() : YearMonth.now();
+        YearMonth month = request.getMonth() != null ? request.getMonth() : null;
 
         // Calculate date range for the month
-        Instant startDate = month.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
-        Instant endDate = month.plusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        Instant startDate, endDate;
+        
+        if (month != null) {
+            // If specific month is requested, use that month's date range
+            startDate = month.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+            endDate = month.plusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
+        } else {
+            // If no month specified, show all records (from beginning of time to now)
+            startDate = Instant.EPOCH; // Beginning of time
+            endDate = Instant.now().plusSeconds(1); // Current time + 1 second
+        }
 
         // Apply store filter based on user role
         UUID storeId = userStoreId != null ? userStoreId : request.getStoreId();
@@ -111,62 +151,62 @@ public class StockReportServiceImplementation implements StockReportService {
         Map<UUID, List<Inventory>> groupedByProductVersion = inventoryList.stream()
             .collect(Collectors.groupingBy(inv -> inv.getProductVersion().getId()));
 
-        List<StockReportDetailResponse> summaryList = new ArrayList<>();
+        List<StockReportDetailResponse> detailList = new ArrayList<>();
 
         for (Map.Entry<UUID, List<Inventory>> entry : groupedByProductVersion.entrySet()) {
             List<Inventory> productRecords = entry.getValue();
-            Inventory sample = productRecords.get(0);
+            
+            // Create a detail record for each inventory movement
+            for (Inventory inv : productRecords) {
+                String journal = inv.getJournal();
+                String changeType = "ADDITION";
+                Integer stockChange = 0;
+                
+                if (journal != null) {
+                    if (journal.startsWith("+")) {
+                        changeType = "ADDITION";
+                        try {
+                            stockChange = Integer.parseInt(journal.substring(1));
+                        } catch (NumberFormatException e) {
+                            stockChange = 0;
+                        }
+                    } else if (journal.startsWith("-")) {
+                        changeType = "REDUCTION";
+                        try {
+                            stockChange = Integer.parseInt(journal.substring(1));
+                        } catch (NumberFormatException e) {
+                            stockChange = 0;
+                        }
+                    }
+                }
 
-            // Opening stock: Get all inventory movements before startDate to calculate opening balance
-            Page<Inventory> historicalInventory = inventoryRepository.findInventoryHistoryForReport(
-                storeId,
-                request.getWarehouseId(),
-                null, // Don't filter by product name for historical data
-                Instant.EPOCH, // From the beginning of time
-                startDate, // Until start of reporting period
-                Pageable.unpaged()
-            );
-
-            // Calculate opening stock by summing all movements before the period for this product version
-            Long openingStock = historicalInventory.stream()
-                .filter(inv -> inv.getProductVersion().getId().equals(entry.getKey()))
-                .mapToLong(Inventory::getStock)
-                .sum();
-
-            // Calculate net additions and reductions during the period
-            long totalAdditions = productRecords.stream()
-                .filter(inv -> inv.getStock() > 0)
-                .mapToLong(Inventory::getStock)
-                .sum();
-
-            long totalReductions = productRecords.stream()
-                .filter(inv -> inv.getStock() < 0)
-                .mapToLong(inv -> Math.abs(inv.getStock()))
-                .sum();
-
-            long closingStock = openingStock + totalAdditions - totalReductions;
-
-            summaryList.add(StockReportDetailResponse.builder()
-                .productName(sample.getProductVersion().getProduct().getName())
-                .productVersion("v" + sample.getProductVersion().getVersionNumber())
-                .storeName(sample.getWarehouse().getStore().getStoreName())
-                .warehouseName(sample.getWarehouse().getName())
-                .price(sample.getProductVersion().getPrice())
-                .build());
+                detailList.add(StockReportDetailResponse.builder()
+                    .productName(inv.getProductVersion().getProduct().getName())
+                    .productVersion("v" + inv.getProductVersion().getVersionNumber())
+                    .storeName(inv.getWarehouse().getStore().getStoreName())
+                    .warehouseName(inv.getWarehouse().getName())
+                    .stockChange(stockChange)
+                    .journal(journal)
+                    .timestamp(inv.getCreatedAt())
+                    .price(inv.getProductVersion().getPrice())
+                    .changeType(changeType)
+                    .build());
+            }
         }
 
         // Sort the results for consistent ordering
-        summaryList.sort(Comparator
+        detailList.sort(Comparator
             .comparing(StockReportDetailResponse::getProductName)
-            .thenComparing(StockReportDetailResponse::getProductVersion));
+            .thenComparing(StockReportDetailResponse::getProductVersion)
+            .thenComparing(StockReportDetailResponse::getTimestamp));
 
         // Apply pagination manually after aggregation
-        int totalElements = summaryList.size();
+        int totalElements = detailList.size();
         int start = Math.min((int) pageable.getOffset(), totalElements);
         int end = Math.min(start + pageable.getPageSize(), totalElements);
 
         List<StockReportDetailResponse> paginatedList = start < totalElements ?
-            summaryList.subList(start, end) : new ArrayList<>();
+            detailList.subList(start, end) : new ArrayList<>();
 
         return PaginatedResponse.Utils.from(inventoryList, paginatedList);
     }
