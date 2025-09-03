@@ -1,7 +1,12 @@
 package com.pwdk.grocereach.product.applications.impl;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -108,31 +113,53 @@ public class ProductServiceImplementation implements ProductService {
       throw new MissingParameterException("User geolocation is required!");
     }
 
-    Page<Product> page = productRepository.findAll(ProductSpecification.searchByKeyword(search,categoryID,null), pageable).map(product -> product);
+    List<Product> allProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search,categoryID,null));
 
-    List<ProductResponse> filteredResponses = page.getContent().stream()
-        .map(product -> {
-          ProductResponse response = ProductResponse.from(product);
+    List<Product> filteredProducts = new ArrayList<>();
+    List<ProductResponse> filteredResponses = new ArrayList<>();
 
-          // Filter inventories by distance
-          var filteredInventories = response.getProductVersionResponse().getInventories().stream()
-              .filter(inv -> {
-                double dist = haversine(
-                    userLatitude,
-                    userLongitude,
-                    inv.getWarehouseLatitude(),
-                    inv.getWarehouseLongitude()
-                );
-                return dist <= maxDistanceKM;
-              })
-              .toList();
+    for (Product product : allProducts) {
+      ProductResponse response = ProductResponse.from(product);
 
-          response.getProductVersionResponse().setInventories(filteredInventories);
-          return response;
-        })
-        .toList();
+      // Safely filter inventories by distance
+      List<com.pwdk.grocereach.inventory.presentations.dtos.InventoryResponse> inventories = response.getProductVersionResponse().getInventories();
+      if (inventories == null) {
+        response.getProductVersionResponse().setInventories(List.of());
+      } else {
+        List<com.pwdk.grocereach.inventory.presentations.dtos.InventoryResponse> filteredInventories = inventories.stream()
+            .filter(inv -> {
+              double dist = haversine(
+                  userLatitude,
+                  userLongitude,
+                  inv.getWarehouseLatitude(),
+                  inv.getWarehouseLongitude()
+              );
+              return dist <= maxDistanceKM;
+            })
+            .toList();
+        response.getProductVersionResponse().setInventories(filteredInventories);
+      }
 
-    return PaginatedResponse.Utils.from(page, filteredResponses);
+      // Keep only products that still have inventories after filtering
+      if (response.getProductVersionResponse().getInventories() != null
+          && !response.getProductVersionResponse().getInventories().isEmpty()) {
+        filteredProducts.add(product);
+        filteredResponses.add(response);
+      }
+    }
+
+    int start = (int) pageable.getOffset();
+    int end = Math.min(start + pageable.getPageSize(), filteredProducts.size());
+    List<Product> paginatedProducts = start > filteredProducts.size() ? List.of() : filteredProducts.subList(start, end);
+    List<ProductResponse> paginatedResponses = start > filteredResponses.size() ? List.of() : filteredResponses.subList(start, end);
+
+    Page<Product> customPage = new org.springframework.data.domain.PageImpl<>(
+        paginatedProducts,
+        pageable,
+        filteredProducts.size()
+    );
+
+    return PaginatedResponse.Utils.from(customPage, paginatedResponses);
   }
 
   @Override
