@@ -1,13 +1,28 @@
 package com.pwdk.grocereach.image.domains.entities;
 
-import com.pwdk.grocereach.product.domains.entities.Product;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
-import org.hibernate.annotations.Filter;
-
 import java.time.Instant;
 import java.util.UUID;
+
+import org.hibernate.annotations.Where;
+
+import com.pwdk.grocereach.product.domains.entities.Product;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreRemove;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Setter
 @Getter
@@ -16,7 +31,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "product_image")
-@Filter(name = "deletedAtNull", condition = "deleted_at is null")
+@Where(clause = "deleted is NULL")
 public class ProductImages {
   @Id
   @GeneratedValue
