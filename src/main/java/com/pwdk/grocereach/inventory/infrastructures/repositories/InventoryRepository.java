@@ -16,18 +16,19 @@ import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
-    @Query(value = "SELECT i.* FROM inventory i " +
+    @Query(value = "SELECT DISTINCT ON (i.warehouse_id, p.id) i.* " +
+        "FROM inventory i " +
         "JOIN warehouses w ON w.id = i.warehouse_id " +
         "JOIN stores s ON s.id = w.store_id " +
         "JOIN product_version pv ON pv.id = i.product_version_id " +
-        "JOIN product p ON p.id = pv.product_id AND p.deleted_at IS NULL " +
+        "JOIN product p ON p.id = pv.product_id " +
         "WHERE i.deleted_at IS NULL " +
         "AND (:storeId IS NULL OR s.id = :storeId) " +
         "AND (:warehouseId IS NULL OR w.id = :warehouseId) " +
         "AND (:productName IS NULL OR p.name ILIKE CONCAT('%', :productName, '%')) " +
         "AND i.created_at >= :startDate " +
         "AND i.created_at < :endDate " +
-        "ORDER BY p.name, pv.version_number, i.created_at",
+        "ORDER BY i.warehouse_id, p.id, i.created_at DESC",
         nativeQuery = true)
     Page<Inventory> findInventoryHistoryForReport(
         @Param("storeId") UUID storeId,

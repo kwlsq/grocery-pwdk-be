@@ -16,4 +16,5 @@ public class CreateWarehouseRequest {
   private double latitude;
   private double longitude;
   private boolean isActive;
+  private String storeAdminID;
 }

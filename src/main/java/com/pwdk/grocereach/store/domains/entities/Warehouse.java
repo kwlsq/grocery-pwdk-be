@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.store.domains.entities;
 
+import com.pwdk.grocereach.Auth.Domain.Entities.User;
 import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -46,6 +47,10 @@ public class Warehouse {
 
   @Column(name = "is_active")
   private boolean isActive;
+
+  @ManyToOne
+  @JoinColumn(name = "user_id")
+  private User user;
 
   @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL)
   private List<Inventory> inventories;

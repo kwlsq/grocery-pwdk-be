@@ -150,7 +150,7 @@ public class ProductServiceImplementation implements ProductService {
       copiedInventories = currentVersion.getInventories().stream()
           .map(oldInventory -> Inventory.builder()
               .stock(oldInventory.getStock())
-              .journal("Version migration: " + oldInventory.getJournal())
+              .journal("Version migration: " + oldInventory.getJournal().replace("Version migration: ", ""))
               .warehouse(oldInventory.getWarehouse())
               .build())
           .collect(Collectors.toList());
