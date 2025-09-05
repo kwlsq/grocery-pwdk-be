@@ -2,6 +2,7 @@ package com.pwdk.grocereach.product.applications.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
@@ -25,19 +26,39 @@ public class ProductDistanceFilterService {
       ProductResponse response = ProductResponse.from(product);
 
       List<InventoryResponse> inventories = response.getProductVersionResponse().getInventories();
-      if (inventories == null) {
-        response.getProductVersionResponse().setInventories(List.of());
-      } else {
-        List<InventoryResponse> filteredInventories = inventories.stream()
-            .filter(inv -> withinRange(userLatitude, userLongitude, inv.getWarehouseLatitude(), inv.getWarehouseLongitude(), maxDistanceKM))
-            .toList();
-        response.getProductVersionResponse().setInventories(filteredInventories);
+      if (inventories == null || inventories.isEmpty()) {
+        // Skip products with no inventory
+        continue;
       }
 
-      if (response.getProductVersionResponse().getInventories() != null
-          && !response.getProductVersionResponse().getInventories().isEmpty()) {
-        filteredProducts.add(product);
-        filteredResponses.add(response);
+      // Filter inventories within range and that are not deleted
+      List<InventoryResponse> availableInventories = inventories.stream()
+          .filter(inv -> inv.getDeletedAt() == null) // Only non-deleted inventories
+          .filter(inv -> withinRange(userLatitude, userLongitude,
+              inv.getWarehouseLatitude(),
+              inv.getWarehouseLongitude(),
+              maxDistanceKM))
+          .toList();
+
+      if (!availableInventories.isEmpty()) {
+        // Find the nearest inventory
+        Optional<InventoryResponse> nearestInventory = availableInventories.stream()
+            .min((inv1, inv2) -> {
+              double distance1 = haversine(userLatitude, userLongitude,
+                  inv1.getWarehouseLatitude(),
+                  inv1.getWarehouseLongitude());
+              double distance2 = haversine(userLatitude, userLongitude,
+                  inv2.getWarehouseLatitude(),
+                  inv2.getWarehouseLongitude());
+              return Double.compare(distance1, distance2);
+            });
+
+        if (nearestInventory.isPresent()) {
+          // Set only the nearest inventory
+          response.getProductVersionResponse().setInventories(List.of(nearestInventory.get()));
+          filteredProducts.add(product);
+          filteredResponses.add(response);
+        }
       }
     }
 
@@ -59,7 +80,3 @@ public class ProductDistanceFilterService {
     return R * c;
   }
 }
-
-
-
-
