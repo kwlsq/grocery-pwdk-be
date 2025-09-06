@@ -84,4 +84,12 @@ public class WarehouseServiceImplementation implements WarehouseServices {
     Warehouse warehouse = warehouseRepoImpl.findWarehouseByID(id);
     return WarehouseResponse.from(warehouse);
   }
+
+  @Override
+  public WarehouseResponse getWarehouseByUser(UUID userID) {
+    User user = userRepository.findById(userID).orElseThrow(() -> new RuntimeException("User not found!"));
+    Warehouse warehouse = warehouseRepoImpl.findWarehouseByUser(user);
+
+    return WarehouseResponse.from(warehouse);
+  }
 }

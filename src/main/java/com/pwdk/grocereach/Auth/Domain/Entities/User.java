@@ -49,8 +49,8 @@ public class User {
     @Builder.Default
     private boolean isVerified = false;
 
-    @OneToMany(mappedBy = "user")
-    private List<Warehouse> warehouses;
+    @OneToOne(mappedBy = "user")
+    private Warehouse warehouse;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

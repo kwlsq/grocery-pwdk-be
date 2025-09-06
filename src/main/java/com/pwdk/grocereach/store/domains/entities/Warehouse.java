@@ -48,8 +48,8 @@ public class Warehouse {
   @Column(name = "is_active")
   private boolean isActive;
 
-  @ManyToOne
-  @JoinColumn(name = "user_id")
+  @OneToOne
+  @JoinColumn(name = "user_id", unique = true)
   private User user;
 
   @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL)

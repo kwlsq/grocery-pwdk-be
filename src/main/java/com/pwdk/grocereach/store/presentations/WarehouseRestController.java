@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -51,6 +52,16 @@ public class WarehouseRestController {
     return Response.successfulResponse(
         "Successfully retrieve all warehouse!",
         warehouseServices.getWarehouseByID(id)
+    );
+  }
+
+  @GetMapping("/store-admin")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  public ResponseEntity<?> getWarehouseByUser(Authentication authentication) {
+    UUID userID = UUID.fromString(authentication.getName());
+    return Response.successfulResponse(
+        "Successfully retrieve warehouse!",
+        warehouseServices.getWarehouseByUser(userID)
     );
   }
 

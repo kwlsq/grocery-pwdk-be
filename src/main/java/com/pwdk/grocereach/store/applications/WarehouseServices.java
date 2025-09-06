@@ -13,4 +13,5 @@ public interface WarehouseServices {
   PaginatedResponse<WarehouseResponse> getAllOwnedWarehouse(UUID storeID, Pageable pageable);
   WarehouseResponse createWarehouse(CreateWarehouseRequest request);
   WarehouseResponse getWarehouseByID(String id);
+  WarehouseResponse getWarehouseByUser(UUID userId);
 }
