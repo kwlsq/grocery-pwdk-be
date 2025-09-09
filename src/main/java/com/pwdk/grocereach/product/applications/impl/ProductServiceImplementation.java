@@ -210,13 +210,6 @@ public class ProductServiceImplementation implements ProductService {
   }
 
   @Override
-  public List<ProductCategoryResponse> getAllCategories() {
-    return productCategoryRepository.findAll().stream()
-        .map(ProductCategoryResponse::from)
-        .toList();
-  }
-
-  @Override
   public PaginatedResponse<ProductResponse> getProductsByStoreID(
       UUID storeID, Pageable pageable, String search, String category) {
 

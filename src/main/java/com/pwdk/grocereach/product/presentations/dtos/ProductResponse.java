@@ -28,7 +28,8 @@ public class ProductResponse {
         product.getId(),
         product.getName(),
         product.getDescription(),
-        product.getCategory().getId(),
+        product.getCategory() != null ? product.getCategory().getId()
+        : null,
         ProductVersionResponse.from(product.getCurrentVersion()),
         product.getProductImages() != null ? product.getProductImages().stream()
             .map(ProductImageResponse::from)

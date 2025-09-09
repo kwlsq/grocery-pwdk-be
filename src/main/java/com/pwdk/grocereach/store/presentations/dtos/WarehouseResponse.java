@@ -12,6 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WarehouseResponse {
+  private UUID storeID;
   private UUID id;
   private String name;
   private String address;
@@ -22,6 +23,7 @@ public class WarehouseResponse {
 
   public static WarehouseResponse from(Warehouse warehouse) {
     return new WarehouseResponse(
+        warehouse.getStore().getId(),
         warehouse.getId(),
         warehouse.getName(),
         warehouse.getAddress(),
