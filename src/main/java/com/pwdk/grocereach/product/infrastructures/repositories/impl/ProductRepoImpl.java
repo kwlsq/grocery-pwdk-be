@@ -8,30 +8,37 @@ import com.pwdk.grocereach.product.infrastructures.repositories.ProductCategoryR
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.store.domains.entities.Stores;
+import com.pwdk.grocereach.store.infrastructures.repositories.impl.StoreRepoImpl;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
 public class ProductRepoImpl {
 
   private final ProductRepository productRepository;
-  private final ProductCategoryRepository productCategoryRepository;
+  private final StoreRepoImpl storeRepoImpl;
 
-  public ProductRepoImpl(ProductRepository productRepository, ProductCategoryRepository productCategoryRepository) {
+  public ProductRepoImpl(ProductRepository productRepository, StoreRepoImpl storeRepoImpl) {
     this.productRepository = productRepository;
-    this.productCategoryRepository = productCategoryRepository;
+    this.storeRepoImpl = storeRepoImpl;
   }
 
   public Product createProduct(CreateProductRequest request, ProductCategory category, Stores store) {
-    validateProductNameNotExists(request.getName());
+    validateProductNameNotExists(request.getName(), request.getStoreID());
     Product product = buildNewProduct(request, category, store);
     return saveProduct(product);
   }
 
-  public void validateProductNameNotExists(String name) {
-    if (productRepository.findByName(name).isPresent()) {
-      throw new ProductAlreadyExistException("Product with name '" + name+"' already exists!");
+  public void validateProductNameNotExists(String name, String storeID) {
+    Stores requestStore = storeRepoImpl.findStoreByID(storeID);
+    Optional<Product> product = productRepository.findByName(name);
+    if (product.isPresent()) {
+      Stores store = product.get().getStore();
+      if (requestStore.getId().equals(store.getId())) {
+        throw new ProductAlreadyExistException("Product with name '" + name +"' already exists in store " + store.getStoreName() + " !");
+      }
     }
   }
 

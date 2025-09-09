@@ -4,24 +4,30 @@ import com.pwdk.grocereach.common.exception.CategoryNotFoundException;
 import com.pwdk.grocereach.product.applications.ProductCategoryService;
 import com.pwdk.grocereach.product.domains.entities.ProductCategory;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductCategoryRepository;
+import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductCategoryRepoImpl;
 import com.pwdk.grocereach.product.presentations.dtos.CreateCategoryRequest;
+import com.pwdk.grocereach.product.presentations.dtos.ProductCategoryResponse;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
 public class ProductCategoryServiceImplementation implements ProductCategoryService {
 
   private final ProductCategoryRepository productCategoryRepository;
+  private final ProductCategoryRepoImpl productCategoryRepoImpl;
 
-  public ProductCategoryServiceImplementation(ProductCategoryRepository productCategoryRepository) {
+  public ProductCategoryServiceImplementation(ProductCategoryRepository productCategoryRepository, ProductCategoryRepoImpl productCategoryRepoImpl) {
     this.productCategoryRepository = productCategoryRepository;
+    this.productCategoryRepoImpl = productCategoryRepoImpl;
   }
 
   @Override
   public ProductCategory createCategory(CreateCategoryRequest request) {
 
-    ProductCategory currentCategory = productCategoryRepository.findByName(request.getName());
+    ProductCategory currentCategory = productCategoryRepoImpl.findCategoryByName(request.getName());
 
     if (currentCategory != null) {
       throw new RuntimeException("Category with the same name already exist!");
@@ -39,5 +45,21 @@ public class ProductCategoryServiceImplementation implements ProductCategoryServ
     newCategory.setParent(parentCategory);
 
     return productCategoryRepository.save(newCategory);
+  }
+
+  @Override
+  public List<ProductCategoryResponse> getAllCategories() {
+    return productCategoryRepository.findAll().stream()
+        .map(ProductCategoryResponse::from)
+        .toList();
+  }
+
+  @Override
+  public void deleteCategory(String id) {
+    ProductCategory category = productCategoryRepoImpl.findCategoryByID(id);
+
+    category.setDeletedAt(Instant.now());
+
+    productCategoryRepository.save(category);
   }
 }

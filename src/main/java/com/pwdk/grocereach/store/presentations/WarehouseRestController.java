@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -21,7 +22,7 @@ public class WarehouseRestController {
     this.warehouseServices = warehouseServices;
   }
 
-  @GetMapping("/{storeID}")
+  @GetMapping("/store/{storeID}")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<?> getAllWarehouse(@PathVariable String storeID,
                                            @RequestParam(value = "page", defaultValue = "0") int page,
@@ -42,6 +43,25 @@ public class WarehouseRestController {
     return Response.successfulResponse(
         "Successfully create warehouse",
         warehouseServices.createWarehouse(request)
+    );
+  }
+
+  @GetMapping("/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  public ResponseEntity<?> getWarehouseByID(@PathVariable String id){
+    return Response.successfulResponse(
+        "Successfully retrieve all warehouse!",
+        warehouseServices.getWarehouseByID(id)
+    );
+  }
+
+  @GetMapping("/store-admin")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  public ResponseEntity<?> getWarehouseByUser(Authentication authentication) {
+    UUID userID = UUID.fromString(authentication.getName());
+    return Response.successfulResponse(
+        "Successfully retrieve warehouse!",
+        warehouseServices.getWarehouseByUser(userID)
     );
   }
 

@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.store.infrastructures.repositories.impl;
 
+import com.pwdk.grocereach.Auth.Domain.Entities.User;
 import com.pwdk.grocereach.common.exception.WarehouseNotFoundException;
 import com.pwdk.grocereach.store.domains.entities.Warehouse;
 import com.pwdk.grocereach.store.infrastructures.repositories.WarehouseRepository;
@@ -19,6 +20,11 @@ public class WarehouseRepoImpl {
   public Warehouse findWarehouseByID(String id) {
     UUID warehouseID = UUID.fromString(id);
     return warehouseRepository.findById(warehouseID)
+        .orElseThrow(() -> new WarehouseNotFoundException("Warehouse not found!"));
+  }
+
+  public Warehouse findWarehouseByUser(User user) {
+    return warehouseRepository.findByUser(user)
         .orElseThrow(() -> new WarehouseNotFoundException("Warehouse not found!"));
   }
 }

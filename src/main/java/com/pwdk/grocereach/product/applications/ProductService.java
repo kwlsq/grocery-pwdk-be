@@ -17,7 +17,6 @@ public interface ProductService {
   ProductResponse getProductByID(UUID id);
   ProductResponse updateProduct(UUID id, UpdateProductRequest request);
   void deleteProduct(UUID id);
-  List<ProductCategoryResponse> getAllCategories();
   PaginatedResponse<ProductResponse> getProductsByStoreID(UUID storeID, Pageable pageable, String search, String category);
   ProductResponse updateProductStock(UUID productID, List<WarehouseStock> warehouseStocks);
 }

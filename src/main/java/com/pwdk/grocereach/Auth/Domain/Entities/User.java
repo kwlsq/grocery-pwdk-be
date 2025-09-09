@@ -1,6 +1,7 @@
 package com.pwdk.grocereach.Auth.Domain.Entities;
 
 import com.pwdk.grocereach.Auth.Domain.Enums.UserRole;
+import com.pwdk.grocereach.store.domains.entities.Warehouse;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -9,6 +10,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -46,6 +48,9 @@ public class User {
     @Column(name = "is_verified", nullable = false)
     @Builder.Default
     private boolean isVerified = false;
+
+    @OneToOne(mappedBy = "user")
+    private Warehouse warehouse;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

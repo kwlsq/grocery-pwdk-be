@@ -32,7 +32,7 @@ import org.hibernate.annotations.Where;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "inventory")
-@Where(clause = "deleted_at is NULL")
+//@Where(clause = "deleted_at is NULL")
 public class Inventory {
   @Id
   @GeneratedValue

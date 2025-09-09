@@ -111,7 +111,11 @@ public class ProductServiceImplementation implements ProductService {
       throw new MissingParameterException("User geolocation is required!");
     }
 
-    List<Product> allProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search,categoryID,null));
+    // Get products with available inventory only (using existing specification)
+    List<Product> allProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, null));
+
+    // Filter products to only include those with non-deleted inventory within range
+    // and return only the nearest inventory for each product
     var filterResult = productDistanceFilterService.filterProductsByDistance(allProducts, userLatitude, userLongitude, maxDistanceKM);
     List<Product> filteredProducts = filterResult.products();
     List<ProductResponse> filteredResponses = filterResult.responses();
@@ -150,7 +154,7 @@ public class ProductServiceImplementation implements ProductService {
       copiedInventories = currentVersion.getInventories().stream()
           .map(oldInventory -> Inventory.builder()
               .stock(oldInventory.getStock())
-              .journal("Version migration: " + oldInventory.getJournal())
+              .journal("Version migration: " + oldInventory.getJournal().replace("Version migration: ", ""))
               .warehouse(oldInventory.getWarehouse())
               .build())
           .collect(Collectors.toList());
@@ -206,25 +210,33 @@ public class ProductServiceImplementation implements ProductService {
   }
 
   @Override
-  public List<ProductCategoryResponse> getAllCategories() {
-    return productCategoryRepository.findAll().stream()
-        .map(ProductCategoryResponse::from)
-        .toList();
-  }
-
-  @Override
-  public PaginatedResponse<ProductResponse> getProductsByStoreID(UUID storeID, Pageable pageable, String search, String category) {
+  public PaginatedResponse<ProductResponse> getProductsByStoreID(
+      UUID storeID, Pageable pageable, String search, String category) {
 
     UUID categoryID = null;
-
     if (category != null && !category.trim().isEmpty()) {
       categoryID = UUID.fromString(category);
     }
 
-    Page<Product> page = productRepository.findAll(ProductSpecification.getFilteredProduct(search,categoryID, storeID), pageable).map(product -> product);
+    Page<Product> page = productRepository.findAll(
+        ProductSpecification.getFilteredProduct(search, categoryID, storeID), pageable);
 
     List<ProductResponse> filteredResponses = page.getContent().stream()
-        .map(ProductResponse::from)
+        .map(product -> {
+          ProductResponse response = ProductResponse.from(product);
+
+          // ✅ filter inventories after mapping to DTO
+          if (response.getProductVersionResponse() != null &&
+              response.getProductVersionResponse().getInventories() != null) {
+            response.getProductVersionResponse().setInventories(
+                response.getProductVersionResponse().getInventories().stream()
+                    .filter(inv -> inv.getDeletedAt() == null) // keep only active inventories
+                    .toList()
+            );
+          }
+
+          return response;
+        })
         .toList();
 
     return PaginatedResponse.Utils.from(page, filteredResponses);
