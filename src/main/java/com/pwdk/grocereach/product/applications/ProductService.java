@@ -1,6 +1,7 @@
 package com.pwdk.grocereach.product.applications;
 
 import com.pwdk.grocereach.common.PaginatedResponse;
+import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.product.presentations.dtos.ProductCategoryResponse;
 import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
@@ -16,6 +17,6 @@ public interface ProductService {
   ProductResponse getProductByID(UUID id);
   ProductResponse updateProduct(UUID id, UpdateProductRequest request);
   void deleteProduct(UUID id);
-  List<ProductCategoryResponse> getAllCategories();
   PaginatedResponse<ProductResponse> getProductsByStoreID(UUID storeID, Pageable pageable, String search, String category);
+  ProductResponse updateProductStock(UUID productID, List<WarehouseStock> warehouseStocks);
 }

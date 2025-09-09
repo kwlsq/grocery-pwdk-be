@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.product.presentations.dtos;
 
+import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductVersions;
 import jakarta.persistence.*;
@@ -38,14 +39,12 @@ public class CreateProductRequest {
   @NotBlank(message = "Inventories are required")
   private List<WarehouseStock> inventories;
 
+  private List<UpdateProductRequest.AttachPromotion> promotions;
+
   @Data
   @NoArgsConstructor
   @AllArgsConstructor
-  public static class WarehouseStock {
-    @NotBlank(message = "Warehouse ID is required")
-    private String warehouseID;
-
-    @NotNull(message = "Stock is required")
-    private Integer stock;
+  public static class AttachPromotion {
+    private String promotionID;
   }
 }

@@ -1,13 +1,29 @@
 package com.pwdk.grocereach.inventory.domains.entities;
 
-import com.pwdk.grocereach.product.domains.entities.ProductVersions;
-import com.pwdk.grocereach.store.domains.entities.Warehouse;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.annotations.Filter;
-
 import java.time.Instant;
 import java.util.UUID;
+
+import org.hibernate.annotations.Filter;
+
+import com.pwdk.grocereach.product.domains.entities.ProductVersions;
+import com.pwdk.grocereach.store.domains.entities.Warehouse;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreRemove;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.Where;
 
 @Setter
 @Getter
@@ -16,7 +32,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "inventory")
-@Filter(name = "deletedAtNull", condition = "deleted_at is Null")
+//@Where(clause = "deleted_at is NULL")
 public class Inventory {
   @Id
   @GeneratedValue

@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @Data
@@ -15,13 +16,15 @@ public class InventoryResponse {
   private UUID warehouseID;
   private double warehouseLatitude;
   private double warehouseLongitude;
+  private Instant deletedAt;
 
   public static InventoryResponse from(Inventory inventory)  {
     return new InventoryResponse(
         inventory.getStock(),
-        inventory.getId(),
+        inventory.getWarehouse().getId(),
         inventory.getWarehouse().getLatitude(),
-        inventory.getWarehouse().getLongitude()
+        inventory.getWarehouse().getLongitude(),
+        inventory.getDeletedAt()
     );
   }
 }

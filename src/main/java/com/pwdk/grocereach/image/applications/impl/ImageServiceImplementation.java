@@ -1,5 +1,12 @@
 package com.pwdk.grocereach.image.applications.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.image.applications.CloudinaryService;
 import com.pwdk.grocereach.image.applications.ImageService;
@@ -8,12 +15,6 @@ import com.pwdk.grocereach.image.infrastructures.repositories.ProductImagesRepos
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.presentations.dtos.ProductImageResponse;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 public class ImageServiceImplementation implements ImageService {
@@ -69,5 +70,13 @@ public class ImageServiceImplementation implements ImageService {
     }
 
     return productImageResponseList;
+  }
+
+  @Override
+  public void softDeleteImage(UUID imageId) {
+    ProductImages image = productImagesRepository.findById(imageId)
+        .orElseThrow(() -> new RuntimeException("Image not found!"));
+    image.setDeletedAt(java.time.Instant.now());
+    productImagesRepository.save(image);
   }
 }

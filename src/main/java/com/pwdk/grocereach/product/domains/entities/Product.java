@@ -6,11 +6,11 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.Where;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Setter
 @Getter
@@ -19,7 +19,9 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "product")
-@Filter(name = "deletedAtNull", condition = "deleted_at is Null")
+@FilterDef(name = "deletedAtFilter")
+@Filter(name = "deletedAtFilter", condition = "deleted_at IS NULL")
+@Where(clause = "deleted_at IS NULL")
 public class Product {
   @Id
   @GeneratedValue
@@ -44,6 +46,9 @@ public class Product {
 
   @OneToMany(mappedBy = "product")
   private List<ProductImages> productImages = new ArrayList<>();
+
+  @OneToMany(mappedBy = "product")
+  private Set<ProductPromotions> productPromotions = new HashSet<>();
 
   @ManyToOne
   @JoinColumn(name = "category_id")

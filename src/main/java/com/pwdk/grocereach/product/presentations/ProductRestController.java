@@ -1,15 +1,20 @@
 package com.pwdk.grocereach.product.presentations;
 
 import com.pwdk.grocereach.common.Response;
+import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
+import com.pwdk.grocereach.product.applications.ProductCategoryService;
 import com.pwdk.grocereach.product.applications.ProductService;
+import com.pwdk.grocereach.product.presentations.dtos.CreateCategoryRequest;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -17,9 +22,11 @@ import java.util.UUID;
 public class ProductRestController {
 
   private final ProductService productService;
+  private final ProductCategoryService productCategoryService;
 
-  public ProductRestController(ProductService productService) {
+  public ProductRestController(ProductService productService, ProductCategoryService productCategoryService) {
     this.productService = productService;
+    this.productCategoryService = productCategoryService;
   }
 
   @GetMapping("/public")
@@ -50,7 +57,8 @@ public class ProductRestController {
     );
   }
 
-  @GetMapping("/admin/{id}")
+  @GetMapping("/store/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<?> getProductsByStoreID(@PathVariable String id,
                                                 @RequestParam(value = "page", defaultValue = "0") int page,
                                                 @RequestParam(value = "size", defaultValue = "10") int size,
@@ -72,11 +80,12 @@ public class ProductRestController {
   public ResponseEntity<?> getAllCategories() {
     return Response.successfulResponse(
         "Categories fetched successfully!",
-        productService.getAllCategories()
+        productCategoryService.getAllCategories()
     );
   }
 
-  @PostMapping("/create")
+  @PostMapping()
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> createProduct(@RequestBody CreateProductRequest request) {
     return Response.successfulResponse(
         "Product successfully created!",
@@ -84,7 +93,8 @@ public class ProductRestController {
     );
   }
 
-  @PatchMapping("/update/{id}")
+  @PatchMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> updateProduct(@PathVariable String id,@RequestBody UpdateProductRequest request) {
     UUID uuid = UUID.fromString(id);
     return Response.successfulResponse(
@@ -93,11 +103,38 @@ public class ProductRestController {
     );
   }
 
-  @DeleteMapping("/delete/{id}")
+  @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> deleteProduct(@PathVariable String id) {
     UUID uuid = UUID.fromString(id);
     productService.deleteProduct(uuid);
     return Response.successfulResponse("Delete product success!");
+  }
+
+  @PatchMapping("/stocks/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> updateProductStock(@RequestBody List<WarehouseStock> inventories, @PathVariable String id) {
+    UUID uuid = UUID.fromString(id);
+    return Response.successfulResponse(
+        "Successfully update product stock",
+        productService.updateProductStock(uuid, inventories)
+    );
+  }
+
+  @PostMapping("/category")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> createCategory(@RequestBody CreateCategoryRequest request) {
+    return Response.successfulResponse(
+        "Successfully create new product category!",
+        productCategoryService.createCategory(request)
+    );
+  }
+
+  @DeleteMapping("/category/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> deleteCategory(@PathVariable String id) {
+    productCategoryService.deleteCategory(id);
+    return Response.successfulResponse("Successfully delete product category!");
   }
 
   private Sort.Order getSortOrder(String sortBy, String sortDirection) {

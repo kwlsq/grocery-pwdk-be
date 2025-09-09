@@ -5,6 +5,7 @@ import com.pwdk.grocereach.Auth.Domain.Entities.User;
 import com.pwdk.grocereach.Auth.Domain.Enums.UserRole;
 import com.pwdk.grocereach.Auth.Infrastructure.Repositories.UserRepository;
 import com.pwdk.grocereach.Auth.Infrastructure.Securities.CustomUserDetails;
+import com.pwdk.grocereach.Auth.Presentation.Dto.UpdateUserRequest;
 import com.pwdk.grocereach.Auth.Presentation.Dto.UserResponse;
 import com.pwdk.grocereach.User.Presentation.Dto.UpdateProfileRequest;
 import com.pwdk.grocereach.common.PaginatedResponse;
@@ -92,5 +93,15 @@ public class UserServiceImpl implements UserService {
                 userRepository.save(user.get());
             }
         }
+    }
+
+    @Override
+    public UserResponse updateStoreAdmin(UUID userID, UpdateUserRequest request) {
+        User user = userRepository.findById(userID).orElseThrow(() -> new RuntimeException("User not found!"));
+        if (request.getEmail() != null) {
+            user.setEmail(request.getEmail());
+        }
+        userRepository.save(user);
+        return new UserResponse(user);
     }
 }

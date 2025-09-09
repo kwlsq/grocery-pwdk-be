@@ -1,34 +1,44 @@
 package com.pwdk.grocereach.product.applications.impl;
 
+import java.time.Instant;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.pwdk.grocereach.common.PaginatedResponse;
-import com.pwdk.grocereach.common.exception.*;
+import com.pwdk.grocereach.common.exception.MissingParameterException;
+import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.inventory.domains.entities.Inventory;
-import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepository;
+import com.pwdk.grocereach.inventory.infrastructures.repositories.impl.InventoryRepoImpl;
+import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
 import com.pwdk.grocereach.product.applications.ProductService;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductCategory;
+import com.pwdk.grocereach.product.domains.entities.ProductPromotions;
 import com.pwdk.grocereach.product.domains.entities.ProductVersions;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductCategoryRepository;
+import com.pwdk.grocereach.product.infrastructures.repositories.ProductPromotionRepository;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductVersionRepository;
+import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductCategoryRepoImpl;
+import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductPromotionRepoImpl;
+import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductRepoImpl;
+import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductVersionRepoImpl;
 import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.product.presentations.dtos.ProductCategoryResponse;
 import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
+import com.pwdk.grocereach.promotion.domain.entities.Promotions;
+import com.pwdk.grocereach.promotion.infrastructure.repositories.PromotionRepository;
 import com.pwdk.grocereach.store.domains.entities.Stores;
-import com.pwdk.grocereach.store.domains.entities.Warehouse;
-import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
-import com.pwdk.grocereach.store.infrastructures.repositories.WarehouseRepository;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.pwdk.grocereach.store.infrastructures.repositories.impl.StoreRepoImpl;
 
 @Service
 public class ProductServiceImplementation implements ProductService {
@@ -36,79 +46,56 @@ public class ProductServiceImplementation implements ProductService {
   private final ProductRepository productRepository;
   private final ProductVersionRepository productVersionRepository;
   private final ProductCategoryRepository productCategoryRepository;
-  private final WarehouseRepository warehouseRepository;
-  private final StoresRepository storesRepository;
-  private final InventoryRepository inventoryRepository;
+  private final PromotionRepository promotionRepository;
+  private final ProductPromotionRepository productPromotionRepository;
+  private final ProductRepoImpl productRepoImpl;
+  private final StoreRepoImpl storeRepoImpl;
+  private final ProductCategoryRepoImpl productCategoryRepoImpl;
+  private final ProductVersionRepoImpl productVersionRepoImpl;
+  private final InventoryRepoImpl inventoryRepoImpl;
+  // Removed WarehouseRepoImpl (no direct usage after refactor)
+  private final ProductPromotionRepoImpl productPromotionRepoImpl;
+  private final ProductDistanceFilterService productDistanceFilterService;
+  private final ProductStockService productStockService;
 
-  public ProductServiceImplementation (ProductRepository productRepository, ProductVersionRepository productVersionRepository, ProductCategoryRepository productCategoryRepository, WarehouseRepository warehouseRepository, StoresRepository storesRepository, InventoryRepository inventoryRepository) {
+  public ProductServiceImplementation (ProductRepository productRepository,
+                                       ProductVersionRepository productVersionRepository,
+                                       ProductCategoryRepository productCategoryRepository,
+                                       PromotionRepository promotionRepository,
+                                       ProductPromotionRepository productPromotionRepository, ProductRepoImpl productRepoImpl, StoreRepoImpl storeRepoImpl, ProductCategoryRepoImpl productCategoryRepoImpl, ProductVersionRepoImpl productVersionRepoImpl, InventoryRepoImpl inventoryRepoImpl, ProductPromotionRepoImpl productPromotionRepoImpl, ProductDistanceFilterService productDistanceFilterService, ProductStockService productStockService) {
     this.productRepository = productRepository;
     this.productVersionRepository = productVersionRepository;
     this.productCategoryRepository = productCategoryRepository;
-    this.warehouseRepository = warehouseRepository;
-    this.storesRepository = storesRepository;
-    this.inventoryRepository = inventoryRepository;
+    this.productPromotionRepository = productPromotionRepository;
+    this.promotionRepository = promotionRepository;
+    this.productRepoImpl = productRepoImpl;
+    this.storeRepoImpl = storeRepoImpl;
+    this.productCategoryRepoImpl = productCategoryRepoImpl;
+    this.productVersionRepoImpl = productVersionRepoImpl;
+    this.inventoryRepoImpl = inventoryRepoImpl;
+    this.productPromotionRepoImpl = productPromotionRepoImpl;
+    this.productDistanceFilterService = productDistanceFilterService;
+    this.productStockService = productStockService;
   }
 
   @Override
+  @Transactional
   public ProductResponse createProduct(CreateProductRequest request) {
+    ProductCategory category = productCategoryRepoImpl.findCategoryByID(request.getCategoryID());
+    Stores store = storeRepoImpl.findStoreByID(request.getStoreID());
+    Product product = productRepoImpl.createProduct(request, category, store);
+    ProductVersions version = productVersionRepoImpl.createNewVersion(request, product);
 
-    //    Find existing product by name
-    Optional<Product> productOptional = productRepository.findByName(request.getName());
+    inventoryRepoImpl.createProductInventory(request.getInventories(), version, product); // Create and save inventories
 
-    if (productOptional.isPresent()) {
-      throw new ProductAlreadyExistException("Product with the same name already exist!");
-    }
+    ProductVersions refreshedVersion = productVersionRepoImpl.findVersionByID(version.getId()); // Refresh the product version to get the latest state with inventories
 
-    UUID categoryUUID = UUID.fromString(request.getCategoryID()); // get UUID from categoryID string
-
-    UUID storeUUID = UUID.fromString(request.getStoreID()); // get UUID from storeID string
-
-//    Find the category
-    ProductCategory category = productCategoryRepository.findById(categoryUUID).orElseThrow(() -> new ProductNotFoundException("Category not found!"));
-    Stores store = storesRepository.findById(storeUUID).orElseThrow(() -> new StoreNotFoundException("Store not found!"));
-
-//    Create product first & save to DB *without product version
-    Product product = Product.builder()
-        .name(request.getName())
-        .description(request.getDescription())
-        .isActive(true)
-        .category(category)
-        .store(store)
-        .build();
+    product.setCurrentVersion(refreshedVersion); // Set the refreshed version with inventories back to the product
     productRepository.save(product);
 
-//    Create the product version & save it to DB
-    ProductVersions versions = ProductVersions.builder()
-        .product(product)
-        .price(request.getPrice())
-        .weight(request.getWeight())
-        .versionNumber(1) // set to become first version
-        .changeReason("New product") // for creating new product
-        .effectiveFrom(Instant.now())
-        .build();
-    productVersionRepository.save(versions);
+    productPromotionRepoImpl.createProductPromotions(request.getPromotions(), product);
 
-    product.setCurrentVersion(versions); //set the version to product
-    productRepository.save(product);
-
-    request.getInventories().forEach(inventoryReq -> {
-      UUID warehouseUUID = UUID.fromString(inventoryReq.getWarehouseID());
-      Warehouse warehouse = warehouseRepository.findById(warehouseUUID)
-          .orElseThrow(() -> new WarehouseNotFoundException("Warehouse not found!"));
-
-      Inventory inventory = Inventory.builder()
-          .warehouse(warehouse)
-          .productVersion(versions)
-          .stock(inventoryReq.getStock())
-          .journal("+" + inventoryReq.getStock())
-          .build();
-
-      inventoryRepository.save(inventory);
-    });
-
-
-
-    return ProductResponse.from(product);
+    return ProductResponse.from(productRepoImpl.findProductByID(product.getId()));
   }
 
   @Override
@@ -124,31 +111,27 @@ public class ProductServiceImplementation implements ProductService {
       throw new MissingParameterException("User geolocation is required!");
     }
 
-    Page<Product> page = productRepository.findAll(ProductSpecification.searchByKeyword(search,categoryID,null), pageable).map(product -> product);
+    // Get products with available inventory only (using existing specification)
+    List<Product> allProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, null));
 
-    List<ProductResponse> filteredResponses = page.getContent().stream()
-        .map(product -> {
-          ProductResponse response = ProductResponse.from(product);
+    // Filter products to only include those with non-deleted inventory within range
+    // and return only the nearest inventory for each product
+    var filterResult = productDistanceFilterService.filterProductsByDistance(allProducts, userLatitude, userLongitude, maxDistanceKM);
+    List<Product> filteredProducts = filterResult.products();
+    List<ProductResponse> filteredResponses = filterResult.responses();
 
-          // Filter inventories by distance
-          var filteredInventories = response.getProductVersionResponse().getInventories().stream()
-              .filter(inv -> {
-                double dist = haversine(
-                    userLatitude,
-                    userLongitude,
-                    inv.getWarehouseLatitude(),
-                    inv.getWarehouseLongitude()
-                );
-                return dist <= maxDistanceKM;
-              })
-              .toList();
+    int start = (int) pageable.getOffset();
+    int end = Math.min(start + pageable.getPageSize(), filteredProducts.size());
+    List<Product> paginatedProducts = start > filteredProducts.size() ? List.of() : filteredProducts.subList(start, end);
+    List<ProductResponse> paginatedResponses = start > filteredResponses.size() ? List.of() : filteredResponses.subList(start, end);
 
-          response.getProductVersionResponse().setInventories(filteredInventories);
-          return response;
-        })
-        .toList();
+    Page<Product> customPage = new org.springframework.data.domain.PageImpl<>(
+        paginatedProducts,
+        pageable,
+        filteredProducts.size()
+    );
 
-    return PaginatedResponse.Utils.from(page, filteredResponses);
+    return PaginatedResponse.Utils.from(customPage, paginatedResponses);
   }
 
   @Override
@@ -159,26 +142,50 @@ public class ProductServiceImplementation implements ProductService {
 
   @Override
   public ProductResponse updateProduct(UUID id, UpdateProductRequest request) {
-    Product currentProduct = productRepository.findById(id).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
+    Product currentProduct = productRepoImpl.findProductByID(id);
 
     ProductVersions currentVersion = currentProduct.getCurrentVersion();
-    System.out.println(request.getPrice());
-    System.out.println(request.getStock());
 
-    //    Create new product version
-    ProductVersions newVersion = ProductVersions.builder()
-        .product(currentProduct)
-        .price(request.getPrice() != null ? request.getPrice() : currentVersion.getPrice())
-        .weight(request.getWeight() != null ? request.getWeight() : currentVersion.getWeight())
-        .versionNumber(currentProduct.getCurrentVersion().getVersionNumber() + 1)
-        .changeReason(request.getChangeReason() != null ? request.getChangeReason() : "Changed by API endpoint!")
-        .effectiveFrom(Instant.now())
-        .build();
+    currentProduct.setName(request.getName() != null ? request.getName() : currentProduct.getName());
+    currentProduct.setDescription(request.getDescription() != null ? request.getDescription() : currentProduct.getDescription());
+
+    List<Inventory> copiedInventories = null;
+    if (currentVersion.getInventories() != null) {
+      copiedInventories = currentVersion.getInventories().stream()
+          .map(oldInventory -> Inventory.builder()
+              .stock(oldInventory.getStock())
+              .journal("Version migration: " + oldInventory.getJournal().replace("Version migration: ", ""))
+              .warehouse(oldInventory.getWarehouse())
+              .build())
+          .collect(Collectors.toList());
+    }
+
+// Create new product version
+    ProductVersions newVersion = productVersionRepoImpl.buildNewProductVersion(request, currentProduct, copiedInventories, currentVersion);
+
+// Set the product version reference for each copied inventory
+    if (copiedInventories != null) {
+      copiedInventories.forEach(inventory -> inventory.setProductVersion(newVersion));
+    }
+
     productVersionRepository.save(newVersion);
 
 //    Set effective to for unused version to now
     currentVersion.setEffectiveTo(Instant.now());
 
+
+    if (request.getPromotions() != null) {
+      Set<ProductPromotions> promotions = currentProduct.getProductPromotions();
+      request.getPromotions().forEach((promotionRequest) -> {
+        UUID promotionID = UUID.fromString(promotionRequest.getPromotionID());
+        Promotions promotion = promotionRepository.findById(promotionID).orElseThrow(() -> new RuntimeException("Promotion not found!"));
+        ProductPromotions productPromotion = productPromotionRepoImpl.buildNewProductPromotion(promotion, currentProduct);
+        promotions.add(productPromotion);
+      });
+
+      productPromotionRepository.saveAll(promotions);
+      currentProduct.setProductPromotions(promotions);
+    }
     currentProduct.setCurrentVersion(newVersion);
     currentProduct.setUpdatedAt(Instant.now());
 
@@ -203,38 +210,40 @@ public class ProductServiceImplementation implements ProductService {
   }
 
   @Override
-  public List<ProductCategoryResponse> getAllCategories() {
-    return productCategoryRepository.findAll().stream()
-        .map(ProductCategoryResponse::from)
-        .toList();
-  }
-
-  @Override
-  public PaginatedResponse<ProductResponse> getProductsByStoreID(UUID storeID, Pageable pageable, String search, String category) {
+  public PaginatedResponse<ProductResponse> getProductsByStoreID(
+      UUID storeID, Pageable pageable, String search, String category) {
 
     UUID categoryID = null;
-
     if (category != null && !category.trim().isEmpty()) {
       categoryID = UUID.fromString(category);
     }
 
-    Page<Product> page = productRepository.findAll(ProductSpecification.getFilteredProduct(search,categoryID, storeID), pageable).map(product -> product);
+    Page<Product> page = productRepository.findAll(
+        ProductSpecification.getFilteredProduct(search, categoryID, storeID), pageable);
 
     List<ProductResponse> filteredResponses = page.getContent().stream()
-        .map(ProductResponse::from)
+        .map(product -> {
+          ProductResponse response = ProductResponse.from(product);
+
+          // ✅ filter inventories after mapping to DTO
+          if (response.getProductVersionResponse() != null &&
+              response.getProductVersionResponse().getInventories() != null) {
+            response.getProductVersionResponse().setInventories(
+                response.getProductVersionResponse().getInventories().stream()
+                    .filter(inv -> inv.getDeletedAt() == null) // keep only active inventories
+                    .toList()
+            );
+          }
+
+          return response;
+        })
         .toList();
 
     return PaginatedResponse.Utils.from(page, filteredResponses);
   }
 
-  private double haversine(double lat1, double lon1, double lat2, double lon2) {
-    final int R = 6371; // km
-    double latDistance = Math.toRadians(lat2 - lat1);
-    double lonDistance = Math.toRadians(lon2 - lon1);
-    double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-        + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-        * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
-    double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+  @Override
+  public ProductResponse updateProductStock(UUID productID, List<WarehouseStock> warehouseStocks) {
+    return productStockService.updateProductStock(productID, warehouseStocks);
   }
 }

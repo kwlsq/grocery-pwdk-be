@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.store.infrastructures.repositories;
 
+import com.pwdk.grocereach.Auth.Domain.Entities.User;
 import com.pwdk.grocereach.store.domains.entities.Warehouse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,9 +10,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface WarehouseRepository extends JpaRepository<Warehouse, UUID> {
   Page<Warehouse> findAllByStore_Id(UUID storeId, Pageable pageable);
+  Optional<Warehouse> findByUser(User user);
 }
