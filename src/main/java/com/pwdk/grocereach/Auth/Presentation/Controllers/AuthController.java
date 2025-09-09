@@ -50,7 +50,7 @@ public class AuthController {
                     .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Lax").build();
 
             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
-                    .httpOnly(true).secure(false).path("/api/auth").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
+                    .httpOnly(true).secure(false).path("/api/v1/auth").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
@@ -75,7 +75,7 @@ public class AuthController {
                     .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Lax").build();
 
             ResponseCookie newRefreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
-                    .httpOnly(true).secure(false).path("/api/auth").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
+                    .httpOnly(true).secure(false).path("/api/v1/auth").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
