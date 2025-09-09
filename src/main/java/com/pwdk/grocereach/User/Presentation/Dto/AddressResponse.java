@@ -23,8 +23,12 @@ public class AddressResponse {
         this.recipientName = address.getRecipientName();
         this.phone = address.getPhone();
         this.fullAddress = address.getFullAddress();
-        this.city = address.getCity();
-        this.province = address.getProvince();
+        if (address.getCity() != null) {
+            this.city = address.getCity().getName();
+        }
+        if (address.getProvince() != null) {
+            this.province = address.getProvince().getName();
+        }
         this.postalCode = address.getPostalCode();
         this.isPrimary = address.isPrimary();
     }

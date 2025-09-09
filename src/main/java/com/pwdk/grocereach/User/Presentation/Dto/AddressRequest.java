@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.User.Presentation.Dto;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
@@ -17,8 +18,11 @@ public class AddressRequest {
     @NotBlank(message = "Full address is required")
     private String fullAddress;
 
-    private String city;
-    private String province;
+    @NotNull(message = "Province ID is required")
+    private Integer provinceId;
+
+    @NotNull(message = "City ID is required")
+    private Integer cityId;
     private String postalCode;
     private boolean isPrimary;
 }
