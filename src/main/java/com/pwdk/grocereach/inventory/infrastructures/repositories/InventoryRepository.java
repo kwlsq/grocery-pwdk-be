@@ -59,6 +59,27 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
         Pageable pageable
     );
 
+    @Query(value = "SELECT i.* FROM inventory i " +
+        "JOIN warehouses w ON w.id = i.warehouse_id " +
+        "JOIN stores s ON s.id = w.store_id " +
+        "JOIN product_version pv ON pv.id = i.product_version_id " +
+        "JOIN product p ON p.id = pv.product_id AND p.deleted_at IS NULL " +
+        "WHERE i.deleted_at IS NULL " +
+        "AND (:storeId IS NULL OR s.id = :storeId) " +
+        "AND (:warehouseId IS NULL OR w.id = :warehouseId) " +
+        "AND (:productName IS NULL OR p.name ILIKE CONCAT('%', :productName, '%')) " +
+        "AND i.created_at >= :startDate " +
+        "AND i.created_at < :endDate " +
+        "ORDER BY p.name, pv.version_number, i.created_at",
+        nativeQuery = true)
+    List<Inventory> findInventoryForReportAll(
+        @Param("storeId") UUID storeId,
+        @Param("warehouseId") UUID warehouseId,
+        @Param("productName") String productName,
+        @Param("startDate") Instant startDate,
+        @Param("endDate") Instant endDate
+    );
+
     // Debug method to check if there are any inventory records
     @Query(value = "SELECT COUNT(*) FROM inventory i WHERE i.deleted_at IS NULL", nativeQuery = true)
     long countAllActiveInventory();

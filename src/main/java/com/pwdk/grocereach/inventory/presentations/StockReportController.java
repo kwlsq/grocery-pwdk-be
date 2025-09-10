@@ -123,34 +123,4 @@ public class StockReportController {
         }
         return null;
     }
-
-    // Debug endpoint to test inventory data
-    @GetMapping("/debug")
-    public ResponseEntity<?> debugInventoryData() {
-        try {
-            long totalCount = inventoryRepository.countAllActiveInventory();
-            List<Inventory> allInventory = inventoryRepository.findInventoryWithoutDateFilter(null, null, null);
-            
-            Map<String, Object> debugInfo = new HashMap<>();
-            debugInfo.put("totalInventoryCount", totalCount);
-            debugInfo.put("inventoryWithoutDateFilter", allInventory.size());
-            
-            if (!allInventory.isEmpty()) {
-                debugInfo.put("firstRecordCreatedAt", allInventory.get(0).getCreatedAt());
-                debugInfo.put("lastRecordCreatedAt", allInventory.get(allInventory.size() - 1).getCreatedAt());
-                debugInfo.put("sampleRecord", Map.of(
-                    "id", allInventory.get(0).getId(),
-                    "stock", allInventory.get(0).getStock(),
-                    "warehouseId", allInventory.get(0).getWarehouse().getId(),
-                    "productVersionId", allInventory.get(0).getProductVersion().getId(),
-                    "productName", allInventory.get(0).getProductVersion().getProduct().getName()
-                ));
-            }
-            
-            return Response.successfulResponse("Debug information retrieved successfully", debugInfo);
-        } catch (Exception e) {
-            log.error("Error in debug endpoint", e);
-            return Response.failedResponse("Debug failed: " + e.getMessage());
-        }
-    }
 }
