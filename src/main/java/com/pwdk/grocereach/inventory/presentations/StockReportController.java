@@ -1,9 +1,6 @@
 package com.pwdk.grocereach.inventory.presentations;
 
 import java.time.YearMonth;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.PageRequest;
@@ -13,14 +10,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.pwdk.grocereach.common.Response;
 import com.pwdk.grocereach.inventory.applications.StockReportService;
-import com.pwdk.grocereach.inventory.domains.entities.Inventory;
-import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepository;
 import com.pwdk.grocereach.inventory.presentations.dtos.StockReportRequest;
 import com.pwdk.grocereach.inventory.presentations.dtos.YearMonthConverter;
 
@@ -35,7 +31,6 @@ public class StockReportController {
 
     private final StockReportService stockReportService;
     private final YearMonthConverter yearMonthConverter;
-    private final InventoryRepository inventoryRepository;
 
     @GetMapping("/summary")
     @PreAuthorize("hasAnyRole('ADMIN')")
@@ -72,41 +67,6 @@ public class StockReportController {
         }
     }
 
-    @GetMapping("/detail")
-    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-    public ResponseEntity<?> getMonthlyStockDetail(
-        @RequestParam(required = false, value = "storeId") UUID storeId,
-        @RequestParam(required = false, value = "warehouseId") UUID warehouseId,
-        @RequestParam(required = false, value = "month") String month,
-        @RequestParam(required = false, value = "productName") String productName,
-        @RequestParam(value = "page", defaultValue = "0") int page,
-        @RequestParam(value = "size", defaultValue = "10") int size) {
-        
-        try {
-            UUID userStoreId = getUserStoreId();
-
-            YearMonth yearMonth = month != null && !month.trim().isEmpty() ? yearMonthConverter.convert(month) : null;
-
-            Pageable pageable = PageRequest.of(page, size);
-            
-            StockReportRequest request = StockReportRequest.builder()
-                    .storeId(storeId)
-                    .warehouseId(warehouseId)
-                    .month(yearMonth)
-                    .productName(productName != null && !productName.trim().isEmpty() ? productName.trim() : null)
-                    .build();
-
-            return Response.successfulResponse(
-                "Stock detail report retrieved successfully",
-                stockReportService.getMonthlyStockDetail(request, userStoreId, pageable)
-                );
-                    
-        } catch (Exception e) {
-            log.error("Error retrieving stock detail report", e);
-            return Response.failedResponse("Failed to retrieve stock detail report: " + e.getMessage());
-        }
-    }
-
     private UUID getUserStoreId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getAuthorities() != null) {
@@ -122,5 +82,28 @@ public class StockReportController {
             }
         }
         return null;
+    }
+
+    @GetMapping("/product/{productId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> getProductStockReport(
+        @PathVariable("productId") UUID productId,
+        @RequestParam(required = false, value = "warehouseId") UUID warehouseId,
+        @RequestParam(required = false, value = "month") String month,
+        @RequestParam(value = "page", defaultValue = "0") int page,
+        @RequestParam(value = "size", defaultValue = "10") int size
+    ) {
+        try {
+            UUID userStoreId = getUserStoreId();
+            Pageable pageable = PageRequest.of(page, size);
+            YearMonth yearMonth = month != null && !month.trim().isEmpty() ? yearMonthConverter.convert(month) : null;
+            return Response.successfulResponse(
+                "Product stock report retrieved successfully",
+                stockReportService.getProductStockReport(productId, userStoreId, warehouseId, yearMonth, pageable)
+            );
+        } catch (Exception e) {
+            log.error("Error retrieving product stock report", e);
+            return Response.failedResponse("Failed to retrieve product stock report: " + e.getMessage());
+        }
     }
 }

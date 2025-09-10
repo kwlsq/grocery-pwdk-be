@@ -122,6 +122,7 @@ public class StockReportServiceImplementation implements StockReportService {
 
             return StockReportSummaryResponse.builder()
                 .productName(sample.getProductVersion().getProduct().getName())
+                .productID(sample.getProductVersion().getProduct().getId())
                 .productVersion("v" + sample.getProductVersion().getVersionNumber())
                 .storeName(sample.getWarehouse().getStore().getStoreName())
                 .warehouseName(sample.getWarehouse().getName())
@@ -150,96 +151,65 @@ public class StockReportServiceImplementation implements StockReportService {
     }
 
     @Override
-    public PaginatedResponse<StockReportDetailResponse> getMonthlyStockDetail(StockReportRequest request, UUID userStoreId, Pageable pageable) {
-        YearMonth month = request.getMonth() != null ? request.getMonth() : null;
+    public PaginatedResponse<StockReportDetailResponse> getProductStockReport(UUID productId, UUID userStoreId, UUID warehouseId, YearMonth month, Pageable pageable) {
+        UUID storeId = userStoreId; // managers constrained by their store when available
 
-        // Calculate date range for the month
-        Instant startDate, endDate;
-        
+        Instant startDate;
+        Instant endDate;
         if (month != null) {
-            // If specific month is requested, use that month's date range
             startDate = month.atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
             endDate = month.plusMonths(1).atDay(1).atStartOfDay(ZoneId.systemDefault()).toInstant();
         } else {
-            // If no month specified, show all records (from beginning of time to now)
-            startDate = Instant.EPOCH; // Beginning of time
-            endDate = Instant.now().plusSeconds(1); // Current time + 1 second
+            startDate = Instant.EPOCH;
+            endDate = Instant.now().plusSeconds(1);
         }
 
-        // Apply store filter based on user role
-        UUID storeId = userStoreId != null ? userStoreId : request.getStoreId();
-
-        // Fetch inventory records for this period
-        Page<Inventory> inventoryList = inventoryRepository.findInventoryHistoryForReport(
+        List<Inventory> records = inventoryRepository.findInventoryByProduct(
+            productId,
             storeId,
-            request.getWarehouseId(),
-            request.getProductName(),
+            warehouseId,
             startDate,
-            endDate,
-            Pageable.unpaged() // We aggregate before paging
+            endDate
         );
 
-        // Group by Product + Version
-        Map<UUID, List<Inventory>> groupedByProductVersion = inventoryList.stream()
-            .collect(Collectors.groupingBy(inv -> inv.getProductVersion().getId()));
+        List<StockReportDetailResponse> details = records.stream().map(inv -> {
+            String journal = inv.getJournal();
+            String changeType = "ADDITION";
+            Integer stockChange = 0;
 
-        List<StockReportDetailResponse> detailList = new ArrayList<>();
-
-        for (Map.Entry<UUID, List<Inventory>> entry : groupedByProductVersion.entrySet()) {
-            List<Inventory> productRecords = entry.getValue();
-            
-            // Create a detail record for each inventory movement
-            for (Inventory inv : productRecords) {
-                String journal = inv.getJournal();
-                String changeType = "ADDITION";
-                Integer stockChange = 0;
-                
-                if (journal != null) {
-                    if (journal.startsWith("+")) {
-                        changeType = "ADDITION";
-                        try {
-                            stockChange = Integer.parseInt(journal.substring(1));
-                        } catch (NumberFormatException e) {
-                            stockChange = 0;
-                        }
-                    } else if (journal.startsWith("-")) {
-                        changeType = "REDUCTION";
-                        try {
-                            stockChange = Integer.parseInt(journal.substring(1));
-                        } catch (NumberFormatException e) {
-                            stockChange = 0;
-                        }
-                    }
+            if (journal != null) {
+                if (journal.startsWith("+")) {
+                    changeType = "ADDITION";
+                    try { stockChange = Integer.parseInt(journal.substring(1)); } catch (NumberFormatException e) { stockChange = 0; }
+                } else if (journal.startsWith("-")) {
+                    changeType = "REDUCTION";
+                    try { stockChange = Integer.parseInt(journal.substring(1)); } catch (NumberFormatException e) { stockChange = 0; }
                 }
-
-                detailList.add(StockReportDetailResponse.builder()
-                    .productName(inv.getProductVersion().getProduct().getName())
-                    .productVersion("v" + inv.getProductVersion().getVersionNumber())
-                    .storeName(inv.getWarehouse().getStore().getStoreName())
-                    .warehouseName(inv.getWarehouse().getName())
-                    .stockChange(stockChange)
-                    .journal(journal)
-                    .timestamp(inv.getCreatedAt())
-                    .price(inv.getProductVersion().getPrice())
-                    .changeType(changeType)
-                    .build());
             }
-        }
 
-        // Sort the results for consistent ordering
-        detailList.sort(Comparator
-            .comparing(StockReportDetailResponse::getProductName)
-            .thenComparing(StockReportDetailResponse::getProductVersion)
-            .thenComparing(StockReportDetailResponse::getTimestamp));
+            return StockReportDetailResponse.builder()
+                .productName(inv.getProductVersion().getProduct().getName())
+                .productVersion("v" + inv.getProductVersion().getVersionNumber())
+                .storeName(inv.getWarehouse().getStore().getStoreName())
+                .warehouseName(inv.getWarehouse().getName())
+                .stockChange(stockChange)
+                .journal(journal)
+                .timestamp(inv.getCreatedAt())
+                .price(inv.getProductVersion().getPrice())
+                .changeType(changeType)
+                .build();
+        }).sorted(
+            Comparator.comparing(StockReportDetailResponse::getProductVersion)
+                .thenComparing(StockReportDetailResponse::getWarehouseName)
+                .thenComparing(StockReportDetailResponse::getTimestamp)
+        ).collect(Collectors.toList());
 
-        // Apply pagination manually after aggregation
-        int totalElements = detailList.size();
-        int start = Math.min((int) pageable.getOffset(), totalElements);
-        int end = Math.min(start + pageable.getPageSize(), totalElements);
+        int total = details.size();
+        int start = Math.min((int) pageable.getOffset(), total);
+        int end = Math.min(start + pageable.getPageSize(), total);
+        List<StockReportDetailResponse> pageContent = start < total ? details.subList(start, end) : new ArrayList<>();
 
-        List<StockReportDetailResponse> paginatedList = start < totalElements ?
-            detailList.subList(start, end) : new ArrayList<>();
-
-        return PaginatedResponse.Utils.from(inventoryList, paginatedList);
+        Page<Inventory> meta = new PageImpl<>(records, pageable, total);
+        return PaginatedResponse.Utils.from(meta, pageContent);
     }
 }
