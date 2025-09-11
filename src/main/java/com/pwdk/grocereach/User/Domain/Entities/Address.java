@@ -1,5 +1,7 @@
 package com.pwdk.grocereach.User.Domain.Entities;
 import com.pwdk.grocereach.Auth.Domain.Entities.User;
+import com.pwdk.grocereach.location.domains.entities.City;
+import com.pwdk.grocereach.location.domains.entities.Province;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,11 +36,13 @@ public class Address {
     @Column(name = "full_address", columnDefinition = "TEXT")
     private String fullAddress;
 
-    @Column(name = "city")
-    private String city;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "province_id")
+    private Province province;
 
-    @Column(name = "province")
-    private String province;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "city_id")
+    private City city;
 
     @Column(name = "postal_code")
     private String postalCode;
