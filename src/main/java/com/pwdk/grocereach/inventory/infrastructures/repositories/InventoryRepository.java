@@ -16,6 +16,12 @@ import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
+    @Query(value = "SELECT i.* FROM inventory i WHERE i.warehouse_id = :warehouseId AND i.product_version_id = :productVersionId AND i.deleted_at IS NULL ORDER BY i.created_at DESC LIMIT 1", nativeQuery = true)
+    Inventory findLatestByWarehouseAndProductVersion(@Param("warehouseId") UUID warehouseId, @Param("productVersionId") UUID productVersionId);
+
+    // Fallback derived query using entity relations
+    Inventory findTopByWarehouse_IdAndProductVersion_IdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID warehouseId, UUID productVersionId);
+
     @Query(value = "SELECT DISTINCT ON (i.warehouse_id, p.id) i.* " +
         "FROM inventory i " +
         "JOIN warehouses w ON w.id = i.warehouse_id " +
