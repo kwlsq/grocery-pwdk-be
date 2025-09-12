@@ -16,54 +16,12 @@ import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 @Repository
 public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
-    @Query(value = "SELECT DISTINCT ON (i.warehouse_id, p.id) i.* " +
-        "FROM inventory i " +
-        "JOIN warehouses w ON w.id = i.warehouse_id " +
-        "JOIN stores s ON s.id = w.store_id " +
-        "JOIN product_version pv ON pv.id = i.product_version_id " +
-        "JOIN product p ON p.id = pv.product_id " +
-        "WHERE i.deleted_at IS NULL " +
-        "AND (:storeId IS NULL OR s.id = :storeId) " +
-        "AND (:warehouseId IS NULL OR w.id = :warehouseId) " +
-        "AND (:productName IS NULL OR p.name ILIKE CONCAT('%', :productName, '%')) " +
-        "AND i.created_at >= :startDate " +
-        "AND i.created_at < :endDate " +
-        "ORDER BY i.warehouse_id, p.id, i.created_at DESC",
-        nativeQuery = true)
-    Page<Inventory> findInventoryHistoryForReport(
-        @Param("storeId") UUID storeId,
-        @Param("warehouseId") UUID warehouseId,
-        @Param("productName") String productName,
-        @Param("startDate") Instant startDate,
-        @Param("endDate") Instant endDate,
-        Pageable pageable
-    );
+    @Query(value = "SELECT i.* FROM inventory i WHERE i.warehouse_id = :warehouseId AND i.product_version_id = :productVersionId AND i.deleted_at IS NULL ORDER BY i.created_at DESC LIMIT 1", nativeQuery = true)
+    Inventory findLatestByWarehouseAndProductVersion(@Param("warehouseId") UUID warehouseId, @Param("productVersionId") UUID productVersionId);
 
-    @Query("SELECT i FROM Inventory i " +
-        "JOIN i.warehouse w " +
-        "JOIN w.store s " +
-        "JOIN i.productVersion pv " +
-        "JOIN pv.product p " +
-        "WHERE (:storeId IS NULL OR s.id = :storeId) " +
-        "AND (:warehouseId IS NULL OR w.id = :warehouseId) " +
-        "AND (:productName IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :productName, '%'))) " +
-        "AND i.createdAt >= :startDate " +
-        "AND i.createdAt < :endDate " +
-        "ORDER BY p.name, pv.versionNumber")
-    Page<Inventory> findCurrentInventoryForReport(
-        @Param("storeId") UUID storeId,
-        @Param("warehouseId") UUID warehouseId,
-        @Param("productName") String productName,
-        @Param("startDate") Instant startDate,
-        @Param("endDate") Instant endDate,
-        Pageable pageable
-    );
+    // Fallback derived query using entity relations
+    Inventory findTopByWarehouse_IdAndProductVersion_IdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID warehouseId, UUID productVersionId);
 
-    // Debug method to check if there are any inventory records
-    @Query(value = "SELECT COUNT(*) FROM inventory i WHERE i.deleted_at IS NULL", nativeQuery = true)
-    long countAllActiveInventory();
-
-    // Debug method to find inventory records without date filtering
     @Query(value = "SELECT i.* FROM inventory i " +
         "JOIN warehouses w ON w.id = i.warehouse_id " +
         "JOIN stores s ON s.id = w.store_id " +
@@ -73,11 +31,35 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
         "AND (:storeId IS NULL OR s.id = :storeId) " +
         "AND (:warehouseId IS NULL OR w.id = :warehouseId) " +
         "AND (:productName IS NULL OR p.name ILIKE CONCAT('%', :productName, '%')) " +
+        "AND i.created_at >= :startDate " +
+        "AND i.created_at < :endDate " +
         "ORDER BY p.name, pv.version_number, i.created_at",
         nativeQuery = true)
-    List<Inventory> findInventoryWithoutDateFilter(
+    List<Inventory> findInventoryForReportAll(
         @Param("storeId") UUID storeId,
         @Param("warehouseId") UUID warehouseId,
-        @Param("productName") String productName
+        @Param("productName") String productName,
+        @Param("startDate") Instant startDate,
+        @Param("endDate") Instant endDate
+    );
+
+    @Query(value = "SELECT i.* FROM inventory i " +
+        "JOIN warehouses w ON w.id = i.warehouse_id " +
+        "JOIN stores s ON s.id = w.store_id " +
+        "JOIN product_version pv ON pv.id = i.product_version_id " +
+        "JOIN product p ON p.id = pv.product_id " +
+        "WHERE (:storeId IS NULL OR s.id = :storeId) " +
+        "AND (:warehouseId IS NULL OR w.id = :warehouseId) " +
+        "AND (:productId IS NULL OR p.id = :productId) " +
+        "AND i.created_at >= :startDate " +
+        "AND i.created_at < :endDate " +
+        "ORDER BY p.name, pv.version_number, i.created_at",
+        nativeQuery = true)
+    List<Inventory> findInventoryByProduct(
+        @Param("productId") UUID productId,
+        @Param("storeId") UUID storeId,
+        @Param("warehouseId") UUID warehouseId,
+        @Param("startDate") Instant startDate,
+        @Param("endDate") Instant endDate
     );
 }

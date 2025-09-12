@@ -24,7 +24,6 @@ public class Address {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-
     @Column(name = "label")
     private String label;
 
