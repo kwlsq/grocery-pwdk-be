@@ -16,10 +16,12 @@ import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepository;
 import com.pwdk.grocereach.order.applications.OrderService;
 import com.pwdk.grocereach.order.domains.entities.OrderItems;
+import com.pwdk.grocereach.order.domains.entities.OrderHistory;
 import com.pwdk.grocereach.order.domains.entities.Orders;
 import com.pwdk.grocereach.order.domains.enums.OrderStatus;
 import com.pwdk.grocereach.order.infrastructures.repositories.OrderItemsRepository;
 import com.pwdk.grocereach.order.infrastructures.repositories.OrdersRepository;
+import com.pwdk.grocereach.order.infrastructures.repositories.OrderHistoryRepository;
 import com.pwdk.grocereach.order.presentations.dtos.CreateOrderRequest;
 import com.pwdk.grocereach.order.presentations.dtos.InvoiceResponse;
 import com.pwdk.grocereach.order.presentations.dtos.InvoiceResponse.InvoiceResponseItem;
@@ -36,6 +38,7 @@ public class OrderServiceImplementation implements OrderService {
 
     private final OrdersRepository ordersRepository;
     private final OrderItemsRepository orderItemsRepository;
+    private final OrderHistoryRepository orderHistoryRepository;
     private final ProductVersionRepository productVersionRepository;
     private final WarehouseRepository warehouseRepository;
     private final InventoryRepository inventoryRepository;
@@ -89,7 +92,7 @@ public class OrderServiceImplementation implements OrderService {
             if (latestInventory == null) {
                 latestInventory = inventoryRepository.findTopByWarehouse_IdAndProductVersion_IdAndDeletedAtIsNullOrderByCreatedAtDesc(warehouse.getId(), pv.getId());
             }
-            int currentStock = latestInventory != null && latestInventory.getStock() != null ? latestInventory.getStock() : 0;
+            int currentStock = (latestInventory != null && latestInventory.getStock() != null) ? latestInventory.getStock().intValue() : 0;
             int requestedQty = itemReq.getQuantity();
 
             if (requestedQty <= 0) {
@@ -129,6 +132,14 @@ public class OrderServiceImplementation implements OrderService {
 
         order.setTotalPrice(total);
         ordersRepository.save(order);
+
+        // Write order history as DELIVERED after creation per requirement
+        OrderHistory history = OrderHistory.builder()
+            .order(order)
+            .status(OrderStatus.DELIVERED)
+            .note("Auto-created on order creation")
+            .build();
+        orderHistoryRepository.save(history);
 
         return InvoiceResponse.builder()
             .orderId(order.getId())
