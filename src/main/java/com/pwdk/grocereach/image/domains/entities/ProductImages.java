@@ -31,7 +31,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "product_image")
-@Where(clause = "deleted is NULL")
+@Where(clause = "deleted_at is NULL")
 public class ProductImages {
   @Id
   @GeneratedValue
@@ -56,7 +56,7 @@ public class ProductImages {
   @Column(name = "updated_at")
   private Instant updatedAt;
 
-  @Column(name = "deleted")
+  @Column(name = "deleted_at")
   private Instant deletedAt;
 
   @PrePersist

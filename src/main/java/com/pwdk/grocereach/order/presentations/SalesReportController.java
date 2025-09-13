@@ -58,6 +58,15 @@ public class SalesReportController {
     var data = salesReportService.getOrderHistoryReport(scoped, categoryId, productId, start, end, pageable);
     return Response.successfulResponse("Sales report fetched", data);
   }
+
+  @GetMapping("/monthly-count")
+  @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
+  public ResponseEntity<?> getMonthlyCount() {
+    return Response.successfulResponse(
+        "Successfully get monthly sales count!",
+        salesReportService.getMonthlyCount()
+    );
+  }
 }
 
 
