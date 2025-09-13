@@ -62,7 +62,7 @@ public class CustomOAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHa
         ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", accessToken.getValue())
                 .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Lax").build();
         ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", refreshToken.getValue())
-                .httpOnly(true).secure(false).path("/").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
+                .httpOnly(true).secure(false).path("/api/v1/auth").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
 
         response.addHeader(HttpHeaders.SET_COOKIE, accessTokenCookie.toString());
         response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
