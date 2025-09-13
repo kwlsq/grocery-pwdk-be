@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.pwdk.grocereach.product.presentations.dtos.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,10 +32,6 @@ import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductProm
 import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductRepoImpl;
 import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductVersionRepoImpl;
 import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
-import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
-import com.pwdk.grocereach.product.presentations.dtos.ProductCategoryResponse;
-import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
-import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
 import com.pwdk.grocereach.promotion.domain.entities.Promotions;
 import com.pwdk.grocereach.promotion.infrastructure.repositories.PromotionRepository;
 import com.pwdk.grocereach.store.domains.entities.Stores;
@@ -245,5 +242,10 @@ public class ProductServiceImplementation implements ProductService {
   @Override
   public ProductResponse updateProductStock(UUID productID, List<WarehouseStock> warehouseStocks) {
     return productStockService.updateProductStock(productID, warehouseStocks);
+  }
+
+  @Override
+  public List<UniqueProduct> getAllUniqueProduct() {
+    return productRepository.findAllUniqueProduct();
   }
 }

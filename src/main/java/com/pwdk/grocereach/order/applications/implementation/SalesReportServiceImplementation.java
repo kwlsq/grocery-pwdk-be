@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.pwdk.grocereach.order.presentations.dtos.sales.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -14,10 +15,6 @@ import org.springframework.stereotype.Service;
 import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.order.applications.SalesReportService;
 import com.pwdk.grocereach.order.infrastructures.repositories.OrderHistoryRepository;
-import com.pwdk.grocereach.order.presentations.dtos.sales.OrderHistoryReportRow;
-import com.pwdk.grocereach.order.presentations.dtos.sales.OrderItemInfo;
-import com.pwdk.grocereach.order.presentations.dtos.sales.OrderItemRow;
-import com.pwdk.grocereach.order.presentations.dtos.sales.OrderSummaryRow;
 
 import lombok.RequiredArgsConstructor;
 
@@ -50,6 +47,11 @@ public class SalesReportServiceImplementation implements SalesReportService {
     content.forEach(row -> row.setItems(byOrder.getOrDefault(row.getOrderId(), java.util.Collections.emptyList())));
 
     return PaginatedResponse.Utils.from(page, content);
+  }
+
+  @Override
+  public List<MonthlyOrder> getMonthlyCount() {
+    return orderHistoryRepository.findMonthlyOrderCounts();
   }
 }
 

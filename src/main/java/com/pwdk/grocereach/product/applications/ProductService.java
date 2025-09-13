@@ -2,10 +2,7 @@ package com.pwdk.grocereach.product.applications;
 
 import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
-import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
-import com.pwdk.grocereach.product.presentations.dtos.ProductCategoryResponse;
-import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
-import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
+import com.pwdk.grocereach.product.presentations.dtos.*;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
@@ -19,4 +16,5 @@ public interface ProductService {
   void deleteProduct(UUID id);
   PaginatedResponse<ProductResponse> getProductsByStoreID(UUID storeID, Pageable pageable, String search, String category);
   ProductResponse updateProductStock(UUID productID, List<WarehouseStock> warehouseStocks);
+  List<UniqueProduct> getAllUniqueProduct();
 }

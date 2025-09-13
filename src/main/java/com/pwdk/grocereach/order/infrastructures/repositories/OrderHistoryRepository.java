@@ -1,8 +1,10 @@
 package com.pwdk.grocereach.order.infrastructures.repositories;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
+import com.pwdk.grocereach.order.presentations.dtos.sales.MonthlyOrder;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -67,5 +69,20 @@ public interface OrderHistoryRepository extends JpaRepository<OrderHistory, UUID
       "WHERE o.id IN (:orderIds) \n" +
       "ORDER BY p.name ASC\n",
       nativeQuery = true)
-  java.util.List<OrderItemRow> findItemsForOrders(@Param("orderIds") java.util.List<UUID> orderIds);
+  List<OrderItemRow> findItemsForOrders(@Param("orderIds") List<UUID> orderIds);
+
+  @Query(value = """
+    SELECT
+        to_char(oh.updated_at, 'YYYY-MM') AS month,
+        COUNT(DISTINCT o.id) AS orderCount
+    FROM order_history oh
+    JOIN orders o ON o.id = oh.order_id
+    WHERE oh.deleted_at IS NULL
+      AND date_part('year', oh.updated_at) = date_part('year', CURRENT_DATE)
+    GROUP BY to_char(oh.updated_at, 'YYYY-MM')
+    ORDER BY month
+    """,
+      nativeQuery = true)
+  List<MonthlyOrder> findMonthlyOrderCounts();
+
 }

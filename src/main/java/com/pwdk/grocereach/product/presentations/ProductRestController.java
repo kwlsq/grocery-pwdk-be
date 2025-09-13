@@ -137,6 +137,14 @@ public class ProductRestController {
     return Response.successfulResponse("Successfully delete product category!");
   }
 
+  @GetMapping("/unique")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  public ResponseEntity<?> getAllUniqueProduct() {
+    return Response.successfulResponse(
+        "Successfully fetched all unique product!",
+        productService.getAllUniqueProduct()
+    );
+  }
   private Sort.Order getSortOrder(String sortBy, String sortDirection) {
     return Sort.Order.by(sortBy).with(Sort.Direction.fromString(sortDirection));
   }
