@@ -48,8 +48,7 @@ public class Address {
     private String postalCode;
 
     @Column(name = "is_primary", nullable = false)
-    @Builder.Default
-    private boolean isPrimary = false;
+    private boolean isPrimary ;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
