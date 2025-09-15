@@ -16,5 +16,4 @@ import java.util.UUID;
 @Repository
 public interface WarehouseRepository extends JpaRepository<Warehouse, UUID> {
   Page<Warehouse> findAllByStore_Id(UUID storeId, Pageable pageable);
-  Optional<Warehouse> findByUser(User user);
 }

@@ -90,7 +90,9 @@ public class ProductServiceImplementation implements ProductService {
     product.setCurrentVersion(refreshedVersion); // Set the refreshed version with inventories back to the product
     productRepository.save(product);
 
-    productPromotionRepoImpl.createProductPromotions(request.getPromotions(), product);
+    if (request.getPromotions() != null) {
+      productPromotionRepoImpl.createProductPromotions(request.getPromotions(), product);
+    }
 
     return ProductResponse.from(productRepoImpl.findProductByID(product.getId()));
   }
