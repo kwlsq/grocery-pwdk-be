@@ -27,7 +27,6 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
         "JOIN stores s ON s.id = w.store_id " +
         "JOIN product_version pv ON pv.id = i.product_version_id " +
         "JOIN product p ON p.id = pv.product_id AND p.deleted_at IS NULL " +
-        "WHERE i.deleted_at IS NULL " +
         "AND (:storeId IS NULL OR s.id = :storeId) " +
         "AND (:warehouseId IS NULL OR w.id = :warehouseId) " +
         "AND (:productName IS NULL OR p.name ILIKE CONCAT('%', :productName, '%')) " +

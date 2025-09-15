@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Component
 public class InventoryRepoImpl {
@@ -62,5 +63,9 @@ public class InventoryRepoImpl {
     } catch (Exception e) {
       throw new RuntimeException("Failed to save inventory: " + e.getMessage());
     }
+  }
+
+  public Inventory findTopByWarehouse_IdAndProductVersion_IdAndDeletedAtIsNullOrderByCreatedAtDesc(UUID warehouseID, UUID versionID) {
+    return inventoryRepository.findTopByWarehouse_IdAndProductVersion_IdAndDeletedAtIsNullOrderByCreatedAtDesc(warehouseID, versionID);
   }
 }
