@@ -26,15 +26,11 @@ public class InventoryServiceImplementation implements InventoryService {
   private final ProductRepository productRepository;
   private final WarehouseRepository warehouseRepository;
   private final InventoryRepository inventoryRepository;
-  private final ProductRepoImpl productRepoImpl;
-  private final WarehouseRepoImpl warehouseRepoImpl;
 
-  public InventoryServiceImplementation(ProductRepository productRepository, WarehouseRepository warehouseRepository, InventoryRepository inventoryRepository, ProductRepoImpl productRepoImpl, WarehouseRepoImpl warehouseRepoImpl) {
+  public InventoryServiceImplementation(ProductRepository productRepository, WarehouseRepository warehouseRepository, InventoryRepository inventoryRepository) {
     this.productRepository = productRepository;
     this.warehouseRepository = warehouseRepository;
     this.inventoryRepository = inventoryRepository;
-    this.productRepoImpl = productRepoImpl;
-    this.warehouseRepoImpl = warehouseRepoImpl;
   }
 
   @Override

@@ -26,11 +26,8 @@ public class ProductCategoryServiceImplementation implements ProductCategoryServ
 
   @Override
   public ProductCategory createCategory(CreateCategoryRequest request) {
-    ProductCategory currentCategory = productCategoryRepoImpl.findCategoryByName(request.getName());
+    productCategoryRepoImpl.findCategoryByName(request.getName()); // check category with the same name
 
-    if (currentCategory != null) {
-      throw new RuntimeException("Category with the same name already exist!");
-    }
     ProductCategory parentCategory = null;
 
     if (request.getParentID() != null) {

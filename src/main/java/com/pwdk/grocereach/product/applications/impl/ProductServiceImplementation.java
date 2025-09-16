@@ -50,7 +50,6 @@ public class ProductServiceImplementation implements ProductService {
   private final ProductCategoryRepoImpl productCategoryRepoImpl;
   private final ProductVersionRepoImpl productVersionRepoImpl;
   private final InventoryRepoImpl inventoryRepoImpl;
-  // Removed WarehouseRepoImpl (no direct usage after refactor)
   private final ProductPromotionRepoImpl productPromotionRepoImpl;
   private final ProductDistanceFilterService productDistanceFilterService;
   private final ProductStockService productStockService;
