@@ -19,7 +19,6 @@ public class WarehouseResponse {
   private double latitude;
   private double longitude;
   private boolean isActive;
-  private WarehouseAdmin warehouseAdmin;
 
   public static WarehouseResponse from(Warehouse warehouse) {
     return new WarehouseResponse(
@@ -29,16 +28,7 @@ public class WarehouseResponse {
         warehouse.getAddress(),
         warehouse.getLatitude(),
         warehouse.getLongitude(),
-        warehouse.isActive(),
-        warehouse.getUser() != null
-            ? new WarehouseAdmin(
-            warehouse.getUser().getId(),
-            warehouse.getUser().getFullName(),
-            warehouse.getUser().getRole(),
-            warehouse.getUser().getPhotoUrl(),
-            warehouse.getUser().getPhoneNumber()
-        )
-            : null
+        warehouse.isActive()
     );
   }
 

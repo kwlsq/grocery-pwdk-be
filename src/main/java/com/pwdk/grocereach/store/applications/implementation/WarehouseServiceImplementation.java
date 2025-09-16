@@ -72,8 +72,6 @@ public class WarehouseServiceImplementation implements WarehouseServices {
     warehouse.setLongitude(request.getLongitude());
     warehouse.setStore(store);
 
-    user.ifPresent(warehouse::setUser);
-
     warehouseRepository.save(warehouse);
 
     return WarehouseResponse.from(warehouse);
@@ -82,14 +80,6 @@ public class WarehouseServiceImplementation implements WarehouseServices {
   @Override
   public WarehouseResponse getWarehouseByID(String id) {
     Warehouse warehouse = warehouseRepoImpl.findWarehouseByID(id);
-    return WarehouseResponse.from(warehouse);
-  }
-
-  @Override
-  public WarehouseResponse getWarehouseByUser(UUID userID) {
-    User user = userRepository.findById(userID).orElseThrow(() -> new RuntimeException("User not found!"));
-    Warehouse warehouse = warehouseRepoImpl.findWarehouseByUser(user);
-
     return WarehouseResponse.from(warehouse);
   }
 }

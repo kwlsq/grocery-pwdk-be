@@ -42,40 +42,44 @@ public class ProductStockService {
     Product product = productRepoImpl.findProductByID(productID);
     ProductVersions version = product.getCurrentVersion();
 
-    Map<UUID, Inventory> inventoryMap = new HashMap<>();
-    if (version.getInventories() != null) {
-      version.getInventories().forEach(inv -> inventoryMap.put(inv.getWarehouse().getId(), inv));
-    }
+    List<Inventory> latestInventories = new ArrayList<>();
 
     for (WarehouseStock warehouseStock : warehouseStocks) {
       UUID warehouseID = UUID.fromString(warehouseStock.getWarehouseID());
       Warehouse warehouse = warehouseRepoImpl.findWarehouseByID(warehouseStock.getWarehouseID());
+      Integer newStock = warehouseStock.getStock();
 
-      Inventory newInventory;
-      if (!inventoryMap.containsKey(warehouseID)) {
-        newInventory = inventoryRepoImpl.buildNewInventory(warehouse, warehouseStock.getStock(), version);
-        inventoryMap.put(warehouseID, newInventory);
-        inventoryRepoImpl.saveInventory(newInventory);
-      } else {
-        Inventory existingInventory = inventoryMap.get(warehouseID);
-        Integer oldStock = existingInventory.getStock();
-        Integer newStock = warehouseStock.getStock();
+      // fetch the latest active inventory row for this warehouse + version
+      Inventory latestInventory = inventoryRepoImpl
+          .findTopByWarehouse_IdAndProductVersion_IdAndDeletedAtIsNullOrderByCreatedAtDesc(
+              warehouseID, version.getId());
 
-        if (!oldStock.equals(newStock)) {
-          existingInventory.setDeletedAt(Instant.now());
-          inventoryRepoImpl.saveInventory(existingInventory);
+      int currentStock = (latestInventory != null && latestInventory.getStock() != null)
+          ? latestInventory.getStock()
+          : 0;
 
-          int difference = newStock - oldStock;
-          String journal = difference > 0 ? "+" + difference : "" + difference;
-
-          newInventory = inventoryRepoImpl.buildNewInventory(warehouse, newStock, version, journal);
-          inventoryMap.replace(warehouseID, newInventory);
-          inventoryRepoImpl.saveInventory(newInventory);
+      // if no change, skip
+      if (currentStock == newStock) {
+        if (latestInventory != null) {
+          latestInventories.add(latestInventory);
         }
+        continue;
       }
+
+      // soft delete previous snapshot
+      if (latestInventory != null && latestInventory.getDeletedAt() == null) {
+        latestInventory.setDeletedAt(Instant.now());
+        inventoryRepoImpl.saveInventory(latestInventory);
+      }
+
+      int diff = newStock - currentStock;
+      String journal = diff > 0 ? "+" + diff : String.valueOf(diff);
+
+      Inventory newInventory = inventoryRepoImpl.buildNewInventory(warehouse, newStock, version, journal);
+      inventoryRepoImpl.saveInventory(newInventory);
+      latestInventories.add(newInventory);
     }
 
-    List<Inventory> latestInventories = new ArrayList<>(inventoryMap.values());
     version.setInventories(latestInventories);
     productVersionRepoImpl.saveProductVersion(version);
 

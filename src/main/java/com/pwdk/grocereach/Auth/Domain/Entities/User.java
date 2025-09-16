@@ -49,9 +49,6 @@ public class User {
     @Builder.Default
     private boolean isVerified = false;
 
-    @OneToOne(mappedBy = "user")
-    private Warehouse warehouse;
-
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();

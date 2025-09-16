@@ -48,10 +48,6 @@ public class Warehouse {
   @Column(name = "is_active")
   private boolean isActive;
 
-  @OneToOne
-  @JoinColumn(name = "user_id", unique = true)
-  private User user;
-
   @OneToMany(mappedBy = "warehouse", cascade = CascadeType.ALL)
   private List<Inventory> inventories;
 

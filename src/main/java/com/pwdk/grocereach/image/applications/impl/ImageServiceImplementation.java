@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductRepoImpl;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,11 +23,13 @@ public class ImageServiceImplementation implements ImageService {
   private final ProductRepository productRepository;
   private final CloudinaryService cloudinaryService;
   private final ProductImagesRepository productImagesRepository;
+  private final ProductRepoImpl productRepoImpl;
 
-  public ImageServiceImplementation(ProductRepository productRepository, CloudinaryService cloudinaryService, ProductImagesRepository productImagesRepository) {
+  public ImageServiceImplementation(ProductRepository productRepository, CloudinaryService cloudinaryService, ProductImagesRepository productImagesRepository, ProductRepoImpl productRepoImpl) {
     this.productRepository = productRepository;
     this.cloudinaryService = cloudinaryService;
     this.productImagesRepository = productImagesRepository;
+    this.productRepoImpl = productRepoImpl;
   }
 
   @Override
@@ -35,11 +38,7 @@ public class ImageServiceImplementation implements ImageService {
 
     String url = cloudinaryService.uploadFile(file, "product-image");
 
-    ProductImages image = ProductImages.builder()
-        .product(product)
-        .imageUrl(url)
-        .isPrimary(isPrimary)
-        .build();
+    ProductImages image = newProductImageBuilder(product, url, isPrimary);
 
     productImagesRepository.save(image);
 
@@ -48,27 +47,20 @@ public class ImageServiceImplementation implements ImageService {
 
   @Override
   public List<ProductImageResponse> uploadMultiImage(MultipartFile[] files, UUID productID, boolean isPrimary) {
-    if (files.length < 1) {
-      throw  new RuntimeException("There are no file to upload!");
-    }
+    if (files.length < 1) throw  new RuntimeException("There are no file to upload!");
 
-    Product product = productRepository.findById(productID).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
+    Product product = productRepoImpl.findProductByID(productID);
 
     List<ProductImageResponse> productImageResponseList = new ArrayList<>();
 
     for (MultipartFile file : files) {
       String url = cloudinaryService.uploadFile(file, "product-image");
 
-      ProductImages image = ProductImages.builder()
-          .product(product)
-          .imageUrl(url)
-          .isPrimary(isPrimary)
-          .build();
+      ProductImages image = newProductImageBuilder(product, url, isPrimary);
 
       productImagesRepository.save(image);
       productImageResponseList.add(ProductImageResponse.from(image));
     }
-
     return productImageResponseList;
   }
 
@@ -78,5 +70,13 @@ public class ImageServiceImplementation implements ImageService {
         .orElseThrow(() -> new RuntimeException("Image not found!"));
     image.setDeletedAt(java.time.Instant.now());
     productImagesRepository.save(image);
+  }
+
+  public ProductImages newProductImageBuilder(Product product, String url, boolean isPrimary){
+    return ProductImages.builder()
+        .product(product)
+        .imageUrl(url)
+        .isPrimary(isPrimary)
+        .build();
   }
 }

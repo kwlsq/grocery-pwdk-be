@@ -54,15 +54,4 @@ public class WarehouseRestController {
         warehouseServices.getWarehouseByID(id)
     );
   }
-
-  @GetMapping("/store-admin")
-  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  public ResponseEntity<?> getWarehouseByUser(Authentication authentication) {
-    UUID userID = UUID.fromString(authentication.getName());
-    return Response.successfulResponse(
-        "Successfully retrieve warehouse!",
-        warehouseServices.getWarehouseByUser(userID)
-    );
-  }
-
 }

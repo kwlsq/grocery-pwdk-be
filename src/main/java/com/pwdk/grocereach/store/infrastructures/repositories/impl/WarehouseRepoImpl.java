@@ -22,9 +22,4 @@ public class WarehouseRepoImpl {
     return warehouseRepository.findById(warehouseID)
         .orElseThrow(() -> new WarehouseNotFoundException("Warehouse not found!"));
   }
-
-  public Warehouse findWarehouseByUser(User user) {
-    return warehouseRepository.findByUser(user)
-        .orElseThrow(() -> new WarehouseNotFoundException("Warehouse not found!"));
-  }
 }
