@@ -37,7 +37,8 @@ public class Product {
   private Stores store;
 
   @NotNull
-  @Column(name = "description")
+  @Lob
+  @Column(name = "description", columnDefinition = "TEXT")
   private String description;
 
   @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
