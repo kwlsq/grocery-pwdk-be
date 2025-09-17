@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.store.domains.entities;
 
+import com.pwdk.grocereach.Auth.Domain.Entities.User;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import jakarta.persistence.*;
 import lombok.*;
@@ -32,6 +33,10 @@ public class Stores {
 
   @Column(name = "store_name")
   private String storeName;
+
+  @OneToOne
+  @JoinColumn(name = "manager_id", unique = true)
+  private User admin;
 
   @Column(name = "description")
   private String description;

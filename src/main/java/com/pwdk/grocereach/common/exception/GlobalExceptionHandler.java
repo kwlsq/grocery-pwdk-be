@@ -57,4 +57,11 @@ public class GlobalExceptionHandler {
         Response.failedResponse("Category with the same name already exist!")
     );
   }
+
+  @ExceptionHandler(UserNotFoundException.class)
+  public ResponseEntity<?> handleUserNotFound(UserNotFoundException e) {
+    return ResponseEntity.status(404).body(
+        Response.failedResponse(e.getMessage())
+    );
+  }
 }
