@@ -14,6 +14,7 @@ import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
 import com.pwdk.grocereach.store.infrastructures.repositories.WarehouseRepository;
 import com.pwdk.grocereach.store.infrastructures.repositories.impl.WarehouseRepoImpl;
 import com.pwdk.grocereach.store.presentations.dtos.CreateWarehouseRequest;
+import com.pwdk.grocereach.store.presentations.dtos.UniqueWarehouse;
 import com.pwdk.grocereach.store.presentations.dtos.WarehouseResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -81,5 +82,11 @@ public class WarehouseServiceImplementation implements WarehouseServices {
   public WarehouseResponse getWarehouseByID(String id) {
     Warehouse warehouse = warehouseRepoImpl.findWarehouseByID(id);
     return WarehouseResponse.from(warehouse);
+  }
+
+  @Override
+  public List<UniqueWarehouse> getAllUniqueWarehouse(String id) {
+    UUID storeID = UUID.fromString(id);
+    return warehouseRepository.findAllByStoreId(storeID);
   }
 }
