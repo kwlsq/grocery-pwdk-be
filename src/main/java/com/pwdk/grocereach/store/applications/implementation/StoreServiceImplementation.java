@@ -13,6 +13,7 @@ import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
 import com.pwdk.grocereach.store.infrastructures.repositories.impl.StoreRepoImpl;
 import com.pwdk.grocereach.store.infrastructures.specifications.StoreSpecification;
 import com.pwdk.grocereach.store.presentations.dtos.StoreResponse;
+import com.pwdk.grocereach.store.presentations.dtos.UniqueStore;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -59,5 +60,10 @@ public class StoreServiceImplementation implements StoreServices {
     }
 
     return StoreResponse.from(optionalStore.get());
+  }
+
+  @Override
+  public List<UniqueStore> getAllUniqueStore() {
+    return storesRepository.findAllUniqueStore();
   }
 }

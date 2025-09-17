@@ -54,4 +54,13 @@ public class WarehouseRestController {
         warehouseServices.getWarehouseByID(id)
     );
   }
+
+  @GetMapping("/unique/{id}")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
+  public ResponseEntity<?> getAllUniqueProduct(@PathVariable String id) {
+    return Response.successfulResponse(
+        "Successfully fetched all unique warehouse for this store!",
+        warehouseServices.getAllUniqueWarehouse(id)
+    );
+  }
 }
