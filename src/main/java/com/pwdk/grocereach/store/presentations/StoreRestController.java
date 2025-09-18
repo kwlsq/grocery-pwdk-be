@@ -16,8 +16,6 @@ import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,13 +33,6 @@ public class StoreRestController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<StoreResponse> createStore(@Valid @RequestBody StoreRequest request) {
     return new ResponseEntity<>(storeService.createStore(request), HttpStatus.CREATED);
-  }
-
-
-  @GetMapping
-  @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<List<StoreResponse>> getAllStores() {
-    return ResponseEntity.ok(storeService.getAllStores());
   }
 
   @GetMapping("/{id}")
@@ -67,19 +58,20 @@ public class StoreRestController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<StoreResponse> assignManager(@PathVariable UUID storeId, @Valid @RequestBody AssignManagerRequest request) {
     return ResponseEntity.ok(storeService.assignManagerToStore(storeId, request.getUserId()));
+  }
 
   @GetMapping("/all")
   public ResponseEntity<?> getAllStores(@RequestParam(value = "page", defaultValue = "0") int page,
                                         @RequestParam(value = "size", defaultValue = "10") int size,
                                         @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
                                         @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection,
-                                        @RequestParam(value = "search", defaultValue = "") String search){
+                                        @RequestParam(value = "search", defaultValue = "") String search) {
 
     Pageable pageable = PageRequest.of(page, size, Sort.by(getSortOrder(sortBy, sortDirection)));
 
     return Response.successfulResponse(
-        "Successfully get all stores!",
-        storeServices.getAllStores(pageable, search)
+            "Successfully get all stores!",
+            storeService.getAllStores(pageable, search)
     );
   }
 
@@ -90,12 +82,12 @@ public class StoreRestController {
 
     try {
       return Response.successfulResponse(
-          "Successfully get store for user!",
-          storeServices.getStoreByUser(uuid)
+              "Successfully get store for user!",
+              storeService.getStoreByUser(uuid)
       );
     } catch (StoreNotFoundException e) {
       return Response.failedResponse(
-          "No store found for this user"
+              "No store found for this user"
       );
     }
   }
@@ -108,8 +100,8 @@ public class StoreRestController {
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<?> getAllUniqueProduct() {
     return Response.successfulResponse(
-        "Successfully fetched all unique stores!",
-        storeServices.getAllUniqueStore()
+            "Successfully fetched all unique stores!",
+            storeService.getAllUniqueStore()
     );
   }
 }

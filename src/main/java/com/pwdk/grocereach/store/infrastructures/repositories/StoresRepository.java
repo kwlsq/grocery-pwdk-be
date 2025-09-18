@@ -1,7 +1,6 @@
 package com.pwdk.grocereach.store.infrastructures.repositories;
 
 import com.pwdk.grocereach.Auth.Domain.Entities.User;
-import com.pwdk.grocereach.product.presentations.dtos.UniqueProduct;
 import com.pwdk.grocereach.store.domains.entities.Stores;
 import com.pwdk.grocereach.store.presentations.dtos.UniqueStore;
 import org.springframework.data.jpa.repository.JpaRepository;

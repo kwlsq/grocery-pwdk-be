@@ -42,12 +42,7 @@ public class StoreServiceImplementation implements StoreServices {
   private final StoresRepository storeRepository;
   private final UserRepository userRepository;
   private final StoreRepoImpl storeRepoImpl;
-  
-  public StoreServiceImplementation(StoresRepository storesRepository, UserRepository userRepository, StoreRepoImpl storeRepoImpl) {
-    this.storesRepository = storesRepository;
-    this.storeRepoImpl = storeRepoImpl;
-    this.userRepository = userRepository;
-  }
+
 
 
   @Override
@@ -61,13 +56,6 @@ public class StoreServiceImplementation implements StoreServices {
 
     Stores savedStore = storeRepository.save(store);
     return new StoreResponse(savedStore);
-  }
-
-  @Override
-  public List<StoreResponse> getAllStores() {
-    return storeRepository.findAll().stream()
-            .map(StoreResponse::new)
-            .collect(Collectors.toList());
   }
 
   @Override
@@ -106,18 +94,18 @@ public class StoreServiceImplementation implements StoreServices {
       throw new IllegalStateException("Only users with the MANAGER role can be assigned to a store.");
     }
 
-    store.setStoreManager(user);
+    store.setAdmin(user);
     Stores updatedStore = storeRepository.save(store);
     return new StoreResponse(updatedStore);
-  
+  }
   @Override
   public PaginatedResponse<StoreResponse> getAllStores(Pageable pageable, String search) {
 
-    Page<Stores> page = storesRepository.findAll(StoreSpecification.getFilteredStore(search), pageable);
+    Page<Stores> page = storeRepository.findAll(StoreSpecification.getFilteredStore(search), pageable);
 
     List<StoreResponse> storeResponses = page.getContent().stream()
-        .map(StoreResponse::from)
-        .toList();
+            .map(StoreResponse::new)
+            .toList();
 
     return PaginatedResponse.Utils.from(page, storeResponses);
   }
@@ -134,11 +122,12 @@ public class StoreServiceImplementation implements StoreServices {
       throw new StoreNotFoundException("No store found for this user");
     }
 
-    return StoreResponse.from(optionalStore.get());
+    return new StoreResponse(optionalStore.get());
   }
+
 
   @Override
   public List<UniqueStore> getAllUniqueStore() {
-    return storesRepository.findAllUniqueStore();
+    return storeRepository.findAllUniqueStore();
   }
 }

@@ -26,10 +26,6 @@ public class Stores {
   @Column(name = "id", updatable = false, nullable = false)
   private UUID id;
 
-  @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "manager_id")
-  private User storeManager;
-
   @OneToMany(mappedBy = "store")
   private List<Warehouse> warehouses = new ArrayList<>();
 
