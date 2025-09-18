@@ -32,7 +32,7 @@ public  class StoreResponse {
     this.latitude = store.getLatitude();
     this.longitude = store.getLongitude();
     this.isActive = store.isActive();
-    this.storeManager = (store.getStoreManager() != null)
-            ? new UserResponse(store.getStoreManager())
+    this.storeManager = (store.getAdmin() != null)
+            ? new UserResponse(store.getAdmin())
             : null;}
 }
