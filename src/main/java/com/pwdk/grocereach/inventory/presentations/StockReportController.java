@@ -44,16 +44,10 @@ public class StockReportController {
         
         try {
             YearMonth yearMonth = month != null && !month.trim().isEmpty() ? yearMonthConverter.convert(month) : null;
-
             Pageable pageable = PageRequest.of(page,size);
-            
-            StockReportRequest request = StockReportRequest.builder()
-                    .storeId(storeId)
-                    .warehouseId(warehouseId)
-                    .month(yearMonth)
-                    .productName(productName != null && !productName.trim().isEmpty() ? productName.trim() : null)
-                    .build();
-            
+            String product = productName != null && !productName.trim().isEmpty() ? productName.trim() : null;
+            StockReportRequest request = StockReportRequest.from(storeId, warehouseId, yearMonth, product);
+
             return Response.successfulResponse(
                 "Stock summary report retrieved successfully",
                 stockReportService.getMonthlyStockSummary(request, null, pageable)
@@ -70,18 +64,17 @@ public class StockReportController {
     public ResponseEntity<?> getProductStockReport(
         @PathVariable("productId") UUID productId,
         @RequestParam(required = false, value = "warehouseId") UUID warehouseId,
-        @RequestParam(required = false, value = "storeId") String storeId,
+        @RequestParam(required = false, value = "storeId") UUID storeId,
         @RequestParam(required = false, value = "month") String month,
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "size", defaultValue = "10") int size
     ) {
         try {
-            UUID userStoreId = UUID.fromString(storeId);
             Pageable pageable = PageRequest.of(page, size);
             YearMonth yearMonth = month != null && !month.trim().isEmpty() ? yearMonthConverter.convert(month) : null;
             return Response.successfulResponse(
                 "Product stock report retrieved successfully",
-                stockReportService.getProductStockReport(productId, userStoreId, warehouseId, yearMonth, pageable)
+                stockReportService.getProductStockReport(productId, storeId, warehouseId, yearMonth, pageable)
             );
         } catch (Exception e) {
             log.error("Error retrieving product stock report", e);

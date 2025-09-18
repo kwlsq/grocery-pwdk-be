@@ -17,4 +17,13 @@ public class StockReportRequest {
     private UUID warehouseId;
     private YearMonth month;
     private String productName;
+
+    public static StockReportRequest from(UUID storeId, UUID warehouseId, YearMonth yearMonth, String productName) {
+        return new StockReportRequest(
+            storeId,
+            warehouseId,
+            yearMonth,
+            productName
+        );
+    }
 }
