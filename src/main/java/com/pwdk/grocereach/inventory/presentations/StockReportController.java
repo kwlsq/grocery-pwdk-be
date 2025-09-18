@@ -33,7 +33,7 @@ public class StockReportController {
     private final YearMonthConverter yearMonthConverter;
 
     @GetMapping("/summary")
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<?> getMonthlyStockSummary(
             @RequestParam(required = false, value = "storeId") UUID storeId,
             @RequestParam(required = false, value = "warehouseId") UUID warehouseId,
@@ -43,8 +43,6 @@ public class StockReportController {
             @RequestParam(value = "size", defaultValue = "10") int size) {
         
         try {
-            UUID userStoreId = getUserStoreId();
-
             YearMonth yearMonth = month != null && !month.trim().isEmpty() ? yearMonthConverter.convert(month) : null;
 
             Pageable pageable = PageRequest.of(page,size);
@@ -58,7 +56,7 @@ public class StockReportController {
             
             return Response.successfulResponse(
                 "Stock summary report retrieved successfully",
-                stockReportService.getMonthlyStockSummary(request, userStoreId, pageable)
+                stockReportService.getMonthlyStockSummary(request, null, pageable)
                 );
                     
         } catch (Exception e) {
@@ -67,34 +65,18 @@ public class StockReportController {
         }
     }
 
-    private UUID getUserStoreId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getAuthorities() != null) {
-            boolean isManager = authentication.getAuthorities().stream()
-                    .anyMatch(authority -> authority.getAuthority().equals("ROLE_MANAGER"));
-            
-            if (isManager) {
-                // For manager users, we need to get their store ID from the user context
-                // This would typically come from a custom user details service
-                // For now, we'll return null and let the service handle it
-                // TODO: Implement proper user store mapping
-                return null;
-            }
-        }
-        return null;
-    }
-
     @GetMapping("/product/{productId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
     public ResponseEntity<?> getProductStockReport(
         @PathVariable("productId") UUID productId,
         @RequestParam(required = false, value = "warehouseId") UUID warehouseId,
+        @RequestParam(required = false, value = "storeId") String storeId,
         @RequestParam(required = false, value = "month") String month,
         @RequestParam(value = "page", defaultValue = "0") int page,
         @RequestParam(value = "size", defaultValue = "10") int size
     ) {
         try {
-            UUID userStoreId = getUserStoreId();
+            UUID userStoreId = UUID.fromString(storeId);
             Pageable pageable = PageRequest.of(page, size);
             YearMonth yearMonth = month != null && !month.trim().isEmpty() ? yearMonthConverter.convert(month) : null;
             return Response.successfulResponse(
