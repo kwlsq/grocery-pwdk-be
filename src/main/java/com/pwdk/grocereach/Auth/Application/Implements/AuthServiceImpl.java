@@ -10,6 +10,7 @@ import com.pwdk.grocereach.Auth.Domain.ValueOfObject.Token;
 import com.pwdk.grocereach.Auth.Infrastructure.Repositories.UserRepository;
 import com.pwdk.grocereach.Auth.Infrastructure.Securities.CustomUserDetails;
 import com.pwdk.grocereach.Auth.Presentation.Dto.*;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -41,7 +42,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public User register(RegisterRequest request) {
-        // This method is correct and unchanged
         userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
             if (existingUser.isVerified()) {
                 throw new IllegalStateException("Email is already in use.");
@@ -68,7 +68,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void verifyAccount(VerifyRequest request) {
-        // This method is correct and unchanged
         String redisKey = "verification_token:" + request.getToken();
         String userId = redisTemplate.opsForValue().get(redisKey);
 
@@ -138,7 +137,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void resendVerification(String email) {
-        // This method is correct and unchanged
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalStateException("User with this email does not exist."));
 
@@ -181,7 +179,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserResponse registerStoreAdmin(RegisterRequest request) {
-        // This method is correct and unchanged
         userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
             if (existingUser.isVerified()) {
                 throw new IllegalStateException("Email is already in use.");
@@ -197,7 +194,7 @@ public class AuthServiceImpl implements AuthService {
         newUser.setPassword(passwordEncoder.encode(randomPassword));
         userRepository.save(newUser);
 
-        newUser.setRole(UserRole.MANAGER); // set role to manager
+        newUser.setRole(UserRole.MANAGER);
 
         userRepository.save(newUser);
 
@@ -208,5 +205,35 @@ public class AuthServiceImpl implements AuthService {
         emailService.sendVerificationEmail(newUser.getEmail(), token);
 
         return new UserResponse(newUser);
+    }
+    @Override
+    @Transactional
+    public void confirmEmailChange(String token) {
+        String redisKey = "email_change_token:" + token;
+        String storedValue = redisTemplate.opsForValue().get(redisKey);
+
+        if (storedValue == null) {
+            throw new IllegalStateException("Email change token is invalid or has expired.");
+        }
+
+        // The stored value is "userId:newEmail"
+        String[] parts = storedValue.split(":");
+        UUID userId = UUID.fromString(parts[0]);
+        String newEmail = parts[1];
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found for this token."));
+
+        // Check again to prevent a race condition where the email was taken
+        // after the initial request but before confirmation.
+        if (userRepository.findByEmail(newEmail).isPresent()) {
+            throw new IllegalStateException("Email address has been taken by another account.");
+        }
+
+        user.setEmail(newEmail);
+        userRepository.save(user);
+
+        // Invalidate the token so it can't be used again
+        redisTemplate.delete(redisKey);
     }
 }
