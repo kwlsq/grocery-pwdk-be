@@ -78,11 +78,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints that anyone can access
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**","/api/v1/geocode/**").permitAll()
+                        .requestMatchers("/api/v1/geocode/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/public/**").permitAll()
                         .requestMatchers("/api/v1/locations/**").permitAll()
-                        // All other API requests must be authenticated
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -114,10 +114,8 @@ public class AuthController {
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> payload) {
         try {
             authService.requestPasswordReset(payload.get("email"));
-            // Always return a generic success message to prevent email enumeration attacks
             return ResponseEntity.ok("If an account with that email exists, a password reset link has been sent.");
         } catch (Exception e) {
-            // Even if an error occurs (like user not found), send a generic success message.
             return ResponseEntity.ok("If an account with that email exists, a password reset link has been sent.");
         }
     }
@@ -143,5 +141,10 @@ public class AuthController {
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+    @PostMapping("/confirm-email-change")
+    public ResponseEntity<String> confirmEmailChange(@RequestParam("token") String token) {
+        authService.confirmEmailChange(token);
+        return ResponseEntity.ok("Your email address has been successfully updated.");
     }
 }

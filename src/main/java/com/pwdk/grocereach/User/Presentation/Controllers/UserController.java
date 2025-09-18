@@ -8,6 +8,7 @@ import com.pwdk.grocereach.Auth.Application.Services.UserService;
 import com.pwdk.grocereach.User.Presentation.Dto.AddressRequest;
 import com.pwdk.grocereach.User.Presentation.Dto.AddressResponse;
 import com.pwdk.grocereach.Auth.Presentation.Dto.UserResponse;
+import com.pwdk.grocereach.User.Presentation.Dto.UpdateEmailRequest;
 import com.pwdk.grocereach.User.Presentation.Dto.UpdateProfileRequest;
 import com.pwdk.grocereach.common.Response;
 import jakarta.validation.Valid;
@@ -32,6 +33,7 @@ public class UserController {
 
     private final UserService userService;
     private final AddressService addressService;
+
 
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser(Authentication authentication) {
@@ -91,8 +93,8 @@ public class UserController {
         Pageable pageable = PageRequest.of(page, size);
 
         return Response.successfulResponse(
-            "Successfully fetch all user",
-            userService.getAllUser(pageable, role)
+                "Successfully fetch all user",
+                userService.getAllUser(pageable, role)
         );
     }
 
@@ -102,5 +104,12 @@ public class UserController {
         UUID uuid = UUID.fromString(id);
         userService.deleteStoreAdmin(uuid);
         return Response.successfulResponse("Successfully remove store admin");
+    }
+
+    @PostMapping("/me/change-email")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<String> requestEmailChange(Authentication authentication, @Valid @RequestBody UpdateEmailRequest request) {
+        userService.requestEmailChange(authentication.getName(), request);
+        return ResponseEntity.ok("A verification link has been sent to your new email address. Please check your inbox to confirm the change.");
     }
 }

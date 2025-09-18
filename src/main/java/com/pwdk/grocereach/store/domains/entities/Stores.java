@@ -1,5 +1,6 @@
 package com.pwdk.grocereach.store.domains.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.pwdk.grocereach.Auth.Domain.Entities.User;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import jakarta.persistence.*;
@@ -24,6 +25,10 @@ public class Stores {
   @GeneratedValue
   @Column(name = "id", updatable = false, nullable = false)
   private UUID id;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "manager_id")
+  private User storeManager;
 
   @OneToMany(mappedBy = "store")
   private List<Warehouse> warehouses = new ArrayList<>();
