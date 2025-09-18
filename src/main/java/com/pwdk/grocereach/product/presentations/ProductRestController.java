@@ -3,7 +3,8 @@ package com.pwdk.grocereach.product.presentations;
 import com.pwdk.grocereach.common.Response;
 import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
 import com.pwdk.grocereach.product.applications.ProductCategoryService;
-import com.pwdk.grocereach.product.applications.ProductService;
+import com.pwdk.grocereach.product.applications.ProductReadService;
+import com.pwdk.grocereach.product.applications.ProductWriteService;
 import com.pwdk.grocereach.product.presentations.dtos.CreateCategoryRequest;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
@@ -21,12 +22,14 @@ import java.util.UUID;
 @RequestMapping("/api/v1/products")
 public class ProductRestController {
 
-  private final ProductService productService;
+  private final ProductReadService productReadService;
+  private final ProductWriteService productWriteService;
   private final ProductCategoryService productCategoryService;
 
-  public ProductRestController(ProductService productService, ProductCategoryService productCategoryService) {
-    this.productService = productService;
+  public ProductRestController(ProductCategoryService productCategoryService, ProductWriteService productWriteService, ProductReadService productReadService) {
     this.productCategoryService = productCategoryService;
+    this.productReadService = productReadService;
+    this.productWriteService = productWriteService;
   }
 
   @GetMapping("/public")
@@ -44,7 +47,7 @@ public class ProductRestController {
 
     return Response.successfulResponse(
         "Products fetched successfully",
-        productService.getAllProducts(pageable, search, category, userLatitude, userLongitude, maxDistanceKM)
+        productReadService.getAllProducts(pageable, search, category, userLatitude, userLongitude, maxDistanceKM)
     );
   }
 
@@ -53,7 +56,7 @@ public class ProductRestController {
     UUID uuid = UUID.fromString(id);
     return Response.successfulResponse(
         "Product fetched successfully",
-        productService.getProductByID(uuid)
+        productReadService.getProductByID(uuid)
     );
   }
 
@@ -72,7 +75,7 @@ public class ProductRestController {
     UUID uuid = UUID.fromString(id);
     return Response.successfulResponse(
         "Product fetched successfully",
-        productService.getProductsByStoreID(uuid, pageable, search, category)
+        productReadService.getProductsByStoreID(uuid, pageable, search, category)
     );
   }
 
@@ -89,7 +92,7 @@ public class ProductRestController {
   public ResponseEntity<?> createProduct(@RequestBody CreateProductRequest request) {
     return Response.successfulResponse(
         "Product successfully created!",
-        productService.createProduct(request)
+        productWriteService.createProduct(request)
     );
   }
 
@@ -99,7 +102,7 @@ public class ProductRestController {
     UUID uuid = UUID.fromString(id);
     return Response.successfulResponse(
         "Update product successful",
-        productService.updateProduct(uuid, request)
+        productWriteService.updateProduct(uuid, request)
     );
   }
 
@@ -107,7 +110,7 @@ public class ProductRestController {
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> deleteProduct(@PathVariable String id) {
     UUID uuid = UUID.fromString(id);
-    productService.deleteProduct(uuid);
+    productWriteService.deleteProduct(uuid);
     return Response.successfulResponse("Delete product success!");
   }
 
@@ -117,7 +120,7 @@ public class ProductRestController {
     UUID uuid = UUID.fromString(id);
     return Response.successfulResponse(
         "Successfully update product stock",
-        productService.updateProductStock(uuid, inventories)
+        productWriteService.updateProductStock(uuid, inventories)
     );
   }
 
@@ -142,7 +145,7 @@ public class ProductRestController {
   public ResponseEntity<?> getAllUniqueProduct() {
     return Response.successfulResponse(
         "Successfully fetched all unique product!",
-        productService.getAllUniqueProduct()
+        productReadService.getAllUniqueProduct()
     );
   }
 
