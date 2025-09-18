@@ -39,6 +39,10 @@ public class Stores {
   @Column(name = "store_name")
   private String storeName;
 
+  @OneToOne
+  @JoinColumn(name = "manager_id", unique = true)
+  private User admin;
+
   @Column(name = "description")
   private String description;
 

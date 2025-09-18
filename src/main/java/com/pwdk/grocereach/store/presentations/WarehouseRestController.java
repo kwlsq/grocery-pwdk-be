@@ -55,14 +55,12 @@ public class WarehouseRestController {
     );
   }
 
-  @GetMapping("/store-admin")
+  @GetMapping("/unique/{id}")
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
-  public ResponseEntity<?> getWarehouseByUser(Authentication authentication) {
-    UUID userID = UUID.fromString(authentication.getName());
+  public ResponseEntity<?> getAllUniqueProduct(@PathVariable String id) {
     return Response.successfulResponse(
-        "Successfully retrieve warehouse!",
-        warehouseServices.getWarehouseByUser(userID)
+        "Successfully fetched all unique warehouse for this store!",
+        warehouseServices.getAllUniqueWarehouse(id)
     );
   }
-
 }

@@ -50,7 +50,6 @@ public class ProductServiceImplementation implements ProductService {
   private final ProductCategoryRepoImpl productCategoryRepoImpl;
   private final ProductVersionRepoImpl productVersionRepoImpl;
   private final InventoryRepoImpl inventoryRepoImpl;
-  // Removed WarehouseRepoImpl (no direct usage after refactor)
   private final ProductPromotionRepoImpl productPromotionRepoImpl;
   private final ProductDistanceFilterService productDistanceFilterService;
   private final ProductStockService productStockService;
@@ -90,7 +89,9 @@ public class ProductServiceImplementation implements ProductService {
     product.setCurrentVersion(refreshedVersion); // Set the refreshed version with inventories back to the product
     productRepository.save(product);
 
-    productPromotionRepoImpl.createProductPromotions(request.getPromotions(), product);
+    if (request.getPromotions() != null) {
+      productPromotionRepoImpl.createProductPromotions(request.getPromotions(), product);
+    }
 
     return ProductResponse.from(productRepoImpl.findProductByID(product.getId()));
   }
@@ -108,14 +109,25 @@ public class ProductServiceImplementation implements ProductService {
       throw new MissingParameterException("User geolocation is required!");
     }
 
-    // Get products with available inventory only (using existing specification)
-    List<Product> allProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, null));
+    List<Product> allProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, null)); // Get products with available inventory only (using existing specification)
 
     // Filter products to only include those with non-deleted inventory within range
-    // and return only the nearest inventory for each product
     var filterResult = productDistanceFilterService.filterProductsByDistance(allProducts, userLatitude, userLongitude, maxDistanceKM);
     List<Product> filteredProducts = filterResult.products();
     List<ProductResponse> filteredResponses = filterResult.responses();
+
+    // If no products found within range, fallback to HQ store products
+    if (filteredProducts.isEmpty()) {
+      UUID hqStoreId = UUID.fromString("288705db-7fff-48d1-b4dd-e0a87136bdc6");
+
+      // Get products from HQ store
+      List<Product> hqProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, hqStoreId));
+
+      // Filter HQ products with nearest warehouse inventory
+      var hqFilterResult = productDistanceFilterService.filterProductsByDistance(hqProducts, userLatitude, userLongitude, Double.MAX_VALUE); // No distance limit for HQ
+      filteredProducts = hqFilterResult.products();
+      filteredResponses = hqFilterResult.responses();
+    }
 
     int start = (int) pageable.getOffset();
     int end = Math.min(start + pageable.getPageSize(), filteredProducts.size());
@@ -157,8 +169,7 @@ public class ProductServiceImplementation implements ProductService {
           .collect(Collectors.toList());
     }
 
-// Create new product version
-    ProductVersions newVersion = productVersionRepoImpl.buildNewProductVersion(request, currentProduct, copiedInventories, currentVersion);
+    ProductVersions newVersion = productVersionRepoImpl.buildNewProductVersion(request, currentProduct, copiedInventories, currentVersion); // Create new product version
 
 // Set the product version reference for each copied inventory
     if (copiedInventories != null) {
@@ -167,9 +178,7 @@ public class ProductServiceImplementation implements ProductService {
 
     productVersionRepository.save(newVersion);
 
-//    Set effective to for unused version to now
-    currentVersion.setEffectiveTo(Instant.now());
-
+    currentVersion.setEffectiveTo(Instant.now()); //    Set effective to for unused version to now
 
     if (request.getPromotions() != null) {
       Set<ProductPromotions> promotions = currentProduct.getProductPromotions();

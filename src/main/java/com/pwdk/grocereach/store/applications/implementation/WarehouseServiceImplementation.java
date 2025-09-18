@@ -14,6 +14,7 @@ import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
 import com.pwdk.grocereach.store.infrastructures.repositories.WarehouseRepository;
 import com.pwdk.grocereach.store.infrastructures.repositories.impl.WarehouseRepoImpl;
 import com.pwdk.grocereach.store.presentations.dtos.CreateWarehouseRequest;
+import com.pwdk.grocereach.store.presentations.dtos.UniqueWarehouse;
 import com.pwdk.grocereach.store.presentations.dtos.WarehouseResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -72,8 +73,6 @@ public class WarehouseServiceImplementation implements WarehouseServices {
     warehouse.setLongitude(request.getLongitude());
     warehouse.setStore(store);
 
-    user.ifPresent(warehouse::setUser);
-
     warehouseRepository.save(warehouse);
 
     return WarehouseResponse.from(warehouse);
@@ -86,10 +85,8 @@ public class WarehouseServiceImplementation implements WarehouseServices {
   }
 
   @Override
-  public WarehouseResponse getWarehouseByUser(UUID userID) {
-    User user = userRepository.findById(userID).orElseThrow(() -> new RuntimeException("User not found!"));
-    Warehouse warehouse = warehouseRepoImpl.findWarehouseByUser(user);
-
-    return WarehouseResponse.from(warehouse);
+  public List<UniqueWarehouse> getAllUniqueWarehouse(String id) {
+    UUID storeID = UUID.fromString(id);
+    return warehouseRepository.findAllByStoreId(storeID);
   }
 }

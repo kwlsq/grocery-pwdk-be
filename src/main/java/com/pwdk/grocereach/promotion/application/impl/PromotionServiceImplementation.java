@@ -24,13 +24,9 @@ import java.util.UUID;
 public class PromotionServiceImplementation implements PromotionService {
 
   private final PromotionRepository promotionRepository;
-  private final ProductRepository productRepository;
-  private final ProductPromotionRepository productPromotionRepository;
 
-  public PromotionServiceImplementation(PromotionRepository promotionRepository, ProductRepository productRepository, ProductPromotionRepository productPromotionRepository) {
+  public PromotionServiceImplementation(PromotionRepository promotionRepository) {
     this.promotionRepository = promotionRepository;
-    this.productRepository = productRepository;
-    this.productPromotionRepository = productPromotionRepository;
   }
 
   @Override

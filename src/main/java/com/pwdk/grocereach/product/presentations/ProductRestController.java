@@ -145,6 +145,7 @@ public class ProductRestController {
         productService.getAllUniqueProduct()
     );
   }
+
   private Sort.Order getSortOrder(String sortBy, String sortDirection) {
     return Sort.Order.by(sortBy).with(Sort.Direction.fromString(sortDirection));
   }

@@ -1,6 +1,7 @@
 package com.pwdk.grocereach.Auth.Domain.Entities;
 
 import com.pwdk.grocereach.Auth.Domain.Enums.UserRole;
+import com.pwdk.grocereach.store.domains.entities.Stores;
 import com.pwdk.grocereach.store.domains.entities.Warehouse;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -49,8 +50,8 @@ public class User {
     @Builder.Default
     private boolean isVerified = false;
 
-    @OneToOne(mappedBy = "user")
-    private Warehouse warehouse;
+    @OneToOne(mappedBy = "admin")
+    private Stores managedStore;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

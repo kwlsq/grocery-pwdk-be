@@ -17,12 +17,10 @@ import java.util.UUID;
 public class ProductVersionRepoImpl {
 
   private final ProductVersionRepository productVersionRepository;
-  private final ProductRepository productRepository;
   private final ProductRepoImpl productRepoImpl;
 
-  public ProductVersionRepoImpl(ProductVersionRepository productVersionRepository, ProductRepository productRepository, ProductRepoImpl productRepoImpl) {
+  public ProductVersionRepoImpl(ProductVersionRepository productVersionRepository, ProductRepoImpl productRepoImpl) {
     this.productVersionRepository = productVersionRepository;
-    this.productRepository = productRepository;
     this.productRepoImpl = productRepoImpl;
   }
 

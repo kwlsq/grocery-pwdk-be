@@ -1,11 +1,11 @@
 package com.pwdk.grocereach.product.infrastructures.repositories.impl;
 
+import com.pwdk.grocereach.common.exception.CategoryAlreadyExistException;
 import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.product.domains.entities.ProductCategory;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductCategoryRepository;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -23,11 +23,17 @@ public class ProductCategoryRepoImpl {
         new ProductNotFoundException("Category not found!"));
   }
 
-  public ProductCategory findCategoryByName(String name) {
+  public void findCategoryByName(String name) {
     try {
-      return productCategoryRepository.findByName(name);
-    } catch (Exception e) {
-      throw new ProductNotFoundException("Category not found!");
+      ProductCategory currentCategory = productCategoryRepository.findByName(name);
+
+      if (currentCategory != null) {
+        throw new CategoryAlreadyExistException("Category with the same name already exist!");
+      }
+
+      productCategoryRepository.findByName(name);
+    } catch (CategoryAlreadyExistException e) {
+      throw new CategoryAlreadyExistException("Category not found!");
     }
   }
 }
