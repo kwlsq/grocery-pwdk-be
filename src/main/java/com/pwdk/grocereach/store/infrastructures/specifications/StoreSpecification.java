@@ -12,7 +12,7 @@ public class StoreSpecification {
 
       if (keyword != null && !keyword.isEmpty()) {
         keywordPredicate = cb.or(
-            cb.like(cb.lower(root.get("name")), "%" + keyword.toLowerCase() + "%"),
+            cb.like(cb.lower(root.get("storeName")), "%" + keyword.toLowerCase() + "%"),
             cb.like(cb.lower(root.get("address")), "%" + keyword.toLowerCase() + "%")
         );
       }

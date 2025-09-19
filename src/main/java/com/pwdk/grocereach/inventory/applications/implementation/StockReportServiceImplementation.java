@@ -36,12 +36,7 @@ public class StockReportServiceImplementation implements StockReportService {
         UUID storeId = userStoreId != null ? userStoreId : request.getStoreId();
         DateRange range = toDateRange(request.getMonth());
 
-        List<InventoryMonthlyReport> reports = inventoryRepository.findAggregatedInventoryMonthlyReport(
-            storeId,
-            request.getWarehouseId(),
-            request.getProductName(),
-            range.start(),
-            range.end()
+        List<InventoryMonthlyReport> reports = inventoryRepository.findAggregatedInventoryMonthlyReport( storeId, request.getWarehouseId(), request.getProductName(), range.start(), range.end()
         );
 
         List<StockReportSummaryResponse> summaries = createStockReportResponse(reports);
@@ -59,12 +54,7 @@ public class StockReportServiceImplementation implements StockReportService {
     public PaginatedResponse<StockReportDetailResponse> getProductStockReport(UUID productId, UUID userStoreId, UUID warehouseId, YearMonth month, Pageable pageable) {
       DateRange range = toDateRange(month);
 
-        List<Inventory> records = inventoryRepository.findInventoryByProduct(
-            productId,
-            userStoreId,
-            warehouseId,
-            range.start(),
-            range.end()
+        List<Inventory> records = inventoryRepository.findInventoryByProduct(productId, userStoreId, warehouseId, range.start(), range.end()
         );
 
         List<StockReportDetailResponse> details = records.stream()
@@ -109,7 +99,6 @@ public class StockReportServiceImplementation implements StockReportService {
                 stockChange = parseNumber(journal.substring(1));
             }
         }
-
         return StockReportDetailResponse.from(inv, journal, changeType, stockChange);
     }
 

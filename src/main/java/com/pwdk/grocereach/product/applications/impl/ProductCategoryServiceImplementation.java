@@ -31,8 +31,7 @@ public class ProductCategoryServiceImplementation implements ProductCategoryServ
     ProductCategory parentCategory = null;
 
     if (request.getParentID() != null) {
-      UUID parentID = UUID.fromString(request.getParentID());
-      parentCategory = productCategoryRepository.findById(parentID).orElseThrow(() -> new CategoryNotFoundException("Category not found!"));
+      parentCategory = productCategoryRepoImpl.findCategoryByID(request.getParentID());
     }
 
     ProductCategory newCategory = new ProductCategory();

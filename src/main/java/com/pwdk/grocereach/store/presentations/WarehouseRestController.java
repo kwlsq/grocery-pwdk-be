@@ -5,12 +5,14 @@ import com.pwdk.grocereach.store.applications.WarehouseServices;
 import com.pwdk.grocereach.store.presentations.dtos.CreateWarehouseRequest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
+
+import static com.pwdk.grocereach.store.presentations.StoreRestController.getDirection;
 
 @RestController
 @RequestMapping("/api/v1/warehouse")
@@ -26,15 +28,25 @@ public class WarehouseRestController {
   @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<?> getAllWarehouse(@PathVariable String storeID,
                                            @RequestParam(value = "page", defaultValue = "0") int page,
-                                           @RequestParam(value = "size", defaultValue = "10") int size) {
+                                           @RequestParam(value = "size", defaultValue = "10") int size,
+                                           @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
+                                           @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection) {
 
-    Pageable pageable = PageRequest.of(page, size);
+    Pageable pageable = PageRequest.of(page, size, Sort.by(getSortOrder(sortBy, sortDirection)));
 
     UUID uuid = UUID.fromString(storeID);
     return Response.successfulResponse(
         "Successfully retrieve all warehouse!",
         warehouseServices.getAllOwnedWarehouse(uuid, pageable)
     );
+  }
+
+  private Sort.Order getSortOrder(String sortBy, String sortDirection) {
+    return Sort.Order.by(sortBy).with(validateSortDirection(sortDirection));
+  }
+
+  private Sort.Direction validateSortDirection(String sortDirection) {
+    return getDirection(sortDirection);
   }
 
   @PostMapping
