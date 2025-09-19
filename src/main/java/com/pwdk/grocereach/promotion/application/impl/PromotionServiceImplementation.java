@@ -35,16 +35,7 @@ public class PromotionServiceImplementation implements PromotionService {
     Instant startDate = Instant.parse(request.getStartAt());
     Instant endDate = Instant.parse(request.getEndAt());
 
-    Promotions promotion = new Promotions();
-    promotion.setName(request.getName());
-    promotion.setDescription(request.getDescription());
-    promotion.setType(request.getType());
-    promotion.setValue(request.getValue());
-    promotion.setUnit(request.getUnit());
-    promotion.setMinPurchase(request.getMinPurchase());
-    promotion.setStartAt(startDate);
-    promotion.setEndAt(endDate);
-    promotion.setActive(true);
+    Promotions promotion = createPromotionObject(request, startDate, endDate);
 
     promotionRepository.save(promotion);
 
@@ -60,5 +51,19 @@ public class PromotionServiceImplementation implements PromotionService {
         .toList();
 
     return PaginatedResponse.Utils.from(promotions, promotionResponses);
+  }
+
+  public Promotions createPromotionObject(CreatePromotionRequest request, Instant startDate, Instant endDate) {
+    return Promotions.builder()
+        .name(request.getName())
+        .description(request.getDescription())
+        .type(request.getType())
+        .value(request.getValue())
+        .unit(request.getUnit())
+        .minPurchase(request.getMinPurchase())
+        .startAt(startDate)
+        .endAt(endDate)
+        .isActive(true)
+        .build();
   }
 }

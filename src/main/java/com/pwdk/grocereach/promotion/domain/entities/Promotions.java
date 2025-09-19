@@ -6,6 +6,10 @@ import com.pwdk.grocereach.promotion.domain.enums.PromotionUnit;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.Type;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -35,6 +39,7 @@ public class Promotions {
 
   @Column(name = "type")
   @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   private PromotionType type;
 
   @Column(name = "value")
@@ -42,6 +47,7 @@ public class Promotions {
 
   @Column(name = "unit")
   @Enumerated(EnumType.STRING)
+  @JdbcTypeCode(SqlTypes.NAMED_ENUM)
   private PromotionUnit unit;
 
   @Column(name = "min_purchase")

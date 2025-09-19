@@ -1,5 +1,20 @@
 package com.pwdk.grocereach.Auth.Application.Implements;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.pwdk.grocereach.Auth.Application.Services.EmailService;
 import com.pwdk.grocereach.Auth.Application.Services.UserService;
 import com.pwdk.grocereach.Auth.Domain.Entities.User;
@@ -12,23 +27,8 @@ import com.pwdk.grocereach.User.Presentation.Dto.UpdateEmailRequest;
 import com.pwdk.grocereach.User.Presentation.Dto.UpdateProfileRequest;
 import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.image.applications.CloudinaryService;
-import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -78,7 +78,7 @@ public class UserServiceImpl implements UserService {
         Page<User> page;
 
         if (role != null) {
-            page = userRepository.findAllVerifiedByRole(role, pageable).map(user -> user);
+            page = userRepository.findAllVerifiedByRole(role, pageable);
         } else {
             page = userRepository.findAllByVerifiedTrue(pageable);
         }
