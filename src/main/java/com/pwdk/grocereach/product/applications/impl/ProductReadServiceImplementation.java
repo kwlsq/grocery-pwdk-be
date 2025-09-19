@@ -11,9 +11,13 @@ import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.product.presentations.dtos.UniqueProduct;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -61,6 +65,9 @@ public class ProductReadServiceImplementation implements ProductReadService {
       filteredResponses = hqFilterResult.responses();
     }
 
+    // Apply sorting BEFORE pagination based on pageable's sort
+    applySorting(filteredResponses, pageable.getSort(), userLatitude, userLongitude);
+
     int start = (int) pageable.getOffset();
     int end = Math.min(start + pageable.getPageSize(), filteredProducts.size());
     List<Product> paginatedProducts = start > filteredProducts.size() ? List.of() : filteredProducts.subList(start, end);
@@ -73,6 +80,42 @@ public class ProductReadServiceImplementation implements ProductReadService {
     );
 
     return PaginatedResponse.Utils.from(customPage, paginatedResponses);
+  }
+
+  private void applySorting(List<ProductResponse> responses, Sort sort, double userLatitude, double userLongitude) {
+    if (responses == null || responses.isEmpty()) {
+      return;
+    }
+
+    Sort.Order order = sort.stream().findFirst().orElse(Sort.Order.by("name").with(Sort.Direction.ASC));
+    String property = Optional.ofNullable(order.getProperty()).orElse("name").trim().toLowerCase();
+    boolean ascending = order.getDirection() == Sort.Direction.ASC;
+
+    Comparator<ProductResponse> comparator;
+    switch (property) {
+      case "price" -> comparator = Comparator.comparing(r ->
+          Optional.ofNullable(r.getProductVersionResponse())
+              .map(v -> Optional.ofNullable(v.getPrice()).orElse(BigDecimal.ZERO))
+              .orElse(BigDecimal.ZERO)
+      );
+      case "weight" -> comparator = Comparator.comparing(r ->
+          Optional.ofNullable(r.getProductVersionResponse())
+              .map(v -> Optional.ofNullable(v.getWeight()).orElse(BigDecimal.ZERO))
+              .orElse(BigDecimal.ZERO)
+      );
+      case "name" -> comparator = Comparator.comparing(r ->
+          Optional.ofNullable(r.getName()).orElse("").toLowerCase()
+      );
+      default -> comparator = Comparator.comparing(r ->
+          Optional.ofNullable(r.getName()).orElse("").toLowerCase()
+      );
+    }
+
+    if (!ascending) {
+      comparator = comparator.reversed();
+    }
+
+    responses.sort(comparator);
   }
 
   @Override
@@ -96,7 +139,6 @@ public class ProductReadServiceImplementation implements ProductReadService {
         .map(product -> {
           ProductResponse response = ProductResponse.from(product);
 
-          // ✅ filter inventories after mapping to DTO
           if (response.getProductVersionResponse() != null &&
               response.getProductVersionResponse().getInventories() != null) {
             response.getProductVersionResponse().setInventories(
