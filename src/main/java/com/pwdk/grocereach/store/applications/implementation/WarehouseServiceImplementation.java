@@ -58,12 +58,8 @@ public class WarehouseServiceImplementation implements WarehouseServices {
   public WarehouseResponse createWarehouse(CreateWarehouseRequest request) {
 
     UUID storeID = UUID.fromString(request.getStoreID());
-    UUID userID = UUID.fromString(request.getStoreAdminID());
 
     Stores store = storesRepository.findById(storeID).orElseThrow(() -> new StoreNotFoundException("Store not found!"));
-
-    Optional<User> user = userRepository.findById(userID);
-
 
     Warehouse warehouse = new Warehouse();
     warehouse.setName(request.getName());

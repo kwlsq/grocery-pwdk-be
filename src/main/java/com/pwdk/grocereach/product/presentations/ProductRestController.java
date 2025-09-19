@@ -1,6 +1,7 @@
 package com.pwdk.grocereach.product.presentations;
 
 import com.pwdk.grocereach.common.Response;
+import com.pwdk.grocereach.common.exception.ProductAlreadyExistException;
 import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
 import com.pwdk.grocereach.product.applications.ProductCategoryService;
 import com.pwdk.grocereach.product.applications.ProductReadService;
@@ -90,10 +91,16 @@ public class ProductRestController {
   @PostMapping()
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<?> createProduct(@RequestBody CreateProductRequest request) {
-    return Response.successfulResponse(
-        "Product successfully created!",
-        productWriteService.createProduct(request)
-    );
+    try {
+      return Response.successfulResponse(
+          "Product successfully created!",
+          productWriteService.createProduct(request)
+      );
+    } catch (ProductAlreadyExistException e) {
+      return Response.failedResponse(
+          "Product with the same name already exist in this store!"
+      );
+    }
   }
 
   @PatchMapping("/{id}")
