@@ -88,7 +88,7 @@ public class ProductReadServiceImplementation implements ProductReadService {
     }
 
     Sort.Order order = sort.stream().findFirst().orElse(Sort.Order.by("name").with(Sort.Direction.ASC));
-    String property = Optional.ofNullable(order.getProperty()).orElse("name").trim().toLowerCase();
+    String property = Optional.of(order.getProperty()).orElse("name").trim().toLowerCase();
     boolean ascending = order.getDirection() == Sort.Direction.ASC;
 
     Comparator<ProductResponse> comparator;

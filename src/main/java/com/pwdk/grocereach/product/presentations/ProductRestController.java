@@ -1,5 +1,23 @@
 package com.pwdk.grocereach.product.presentations;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.pwdk.grocereach.common.Response;
 import com.pwdk.grocereach.common.exception.ProductAlreadyExistException;
 import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
@@ -9,15 +27,7 @@ import com.pwdk.grocereach.product.applications.ProductWriteService;
 import com.pwdk.grocereach.product.presentations.dtos.CreateCategoryRequest;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.UUID;
+import static com.pwdk.grocereach.store.presentations.StoreRestController.getDirection;
 
 @RestController
 @RequestMapping("/api/v1/products")
@@ -158,21 +168,26 @@ public class ProductRestController {
 
   private Sort.Order getSortOrder(String sortBy, String sortDirection) {
     Sort.Direction direction = validateSortDirection(sortDirection);
-    return Sort.Order.by(sortBy).with(direction);
+    String mappedSortBy = mapSortBy(sortBy);
+    return Sort.Order.by(mappedSortBy).with(direction);
   }
 
   private Sort.Direction validateSortDirection(String sortDirection) {
-    if (sortDirection == null || sortDirection.trim().isEmpty()) {
-      return Sort.Direction.DESC; // default
+    return getDirection(sortDirection);
+  }
+
+  private String mapSortBy(String sortBy) {
+    if (sortBy == null || sortBy.trim().isEmpty()) {
+      return "id";
     }
 
-    String normalizedDirection = sortDirection.trim().toLowerCase();
+    String normalized = sortBy.trim().toLowerCase();
 
-    return switch (normalizedDirection) {
-      case "asc", "ascending" -> Sort.Direction.ASC;
-      case "desc", "descending" -> Sort.Direction.DESC;
-      default -> throw new IllegalArgumentException("Invalid sort direction: " + sortDirection +
-          ". Use 'asc' or 'desc'");
+    return switch (normalized) {
+      case "price" -> "currentVersion.price";
+      case "weight" -> "currentVersion.weight";
+      case "name" -> "name";
+      default -> sortBy;
     };
   }
 }

@@ -93,7 +93,26 @@ public class StoreRestController {
   }
 
   private Sort.Order getSortOrder(String sortBy, String sortDirection) {
-    return Sort.Order.by(sortBy).with(Sort.Direction.fromString(sortDirection));
+    return Sort.Order.by(sortBy).with(validateSortDirection(sortDirection));
+  }
+
+  private Sort.Direction validateSortDirection(String sortDirection) {
+    return getDirection(sortDirection);
+  }
+
+  public static Sort.Direction getDirection(String sortDirection) {
+    if (sortDirection == null || sortDirection.trim().isEmpty()) {
+      return Sort.Direction.DESC; // default
+    }
+
+    String normalizedDirection = sortDirection.trim().toLowerCase();
+
+    return switch (normalizedDirection) {
+      case "asc", "ascending" -> Sort.Direction.ASC;
+      case "desc", "descending" -> Sort.Direction.DESC;
+      default -> throw new IllegalArgumentException("Invalid sort direction: " + sortDirection +
+          ". Use 'asc' or 'desc'");
+    };
   }
 
   @GetMapping("/unique")
