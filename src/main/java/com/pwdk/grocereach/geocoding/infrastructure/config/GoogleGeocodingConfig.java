@@ -10,8 +10,8 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 @ConfigurationProperties(prefix = "google.maps")
 public class GoogleGeocodingConfig {
-    // This will automatically be populated with the value of 'google.maps.api.key'
     private String apiKey;
+    private String baseUrl;
 
     @Bean
     public RestTemplate restTemplate() {
