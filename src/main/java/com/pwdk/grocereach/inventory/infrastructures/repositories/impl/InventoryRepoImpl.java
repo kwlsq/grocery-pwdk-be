@@ -5,7 +5,6 @@ import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepos
 import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductVersions;
-import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.store.domains.entities.Warehouse;
 import com.pwdk.grocereach.store.infrastructures.repositories.impl.WarehouseRepoImpl;
 import org.springframework.stereotype.Component;

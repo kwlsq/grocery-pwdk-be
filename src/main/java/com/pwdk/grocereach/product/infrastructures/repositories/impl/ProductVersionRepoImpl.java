@@ -3,7 +3,6 @@ package com.pwdk.grocereach.product.infrastructures.repositories.impl;
 import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductVersions;
-import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductVersionRepository;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.product.presentations.dtos.UpdateProductRequest;

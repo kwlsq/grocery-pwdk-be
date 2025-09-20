@@ -9,15 +9,9 @@ import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
 import com.pwdk.grocereach.store.presentations.dtos.*;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import com.pwdk.grocereach.Auth.Infrastructure.Repositories.UserRepository;
 import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.common.exception.StoreNotFoundException;
 import com.pwdk.grocereach.common.exception.UserNotFoundException;
-import com.pwdk.grocereach.product.domains.entities.Product;
-import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
-import com.pwdk.grocereach.store.applications.StoreServices;
-import com.pwdk.grocereach.store.domains.entities.Stores;
-import com.pwdk.grocereach.store.infrastructures.repositories.StoresRepository;
 import com.pwdk.grocereach.store.infrastructures.repositories.impl.StoreRepoImpl;
 import com.pwdk.grocereach.store.infrastructures.specifications.StoreSpecification;
 import com.pwdk.grocereach.store.presentations.dtos.StoreResponse;
@@ -28,10 +22,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.Optional;
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 @Transactional

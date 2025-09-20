@@ -3,8 +3,6 @@ package com.pwdk.grocereach.inventory.domains.entities;
 import java.time.Instant;
 import java.util.UUID;
 
-import org.hibernate.annotations.Filter;
-
 import com.pwdk.grocereach.product.domains.entities.ProductVersions;
 import com.pwdk.grocereach.store.domains.entities.Warehouse;
 
@@ -23,7 +21,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Where;
 
 @Setter
 @Getter

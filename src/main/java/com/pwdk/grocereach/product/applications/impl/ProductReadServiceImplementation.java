@@ -25,6 +25,8 @@ public class ProductReadServiceImplementation implements ProductReadService {
 
   private final ProductRepository productRepository;
   private final ProductDistanceFilterService productDistanceFilterService;
+  private final UUID hqStoreID = UUID.fromString("288705db-7fff-48d1-b4dd-e0a87136bdc6");
+
 
   public ProductReadServiceImplementation (ProductRepository productRepository, ProductDistanceFilterService productDistanceFilterService) {
     this.productRepository = productRepository;
@@ -34,16 +36,10 @@ public class ProductReadServiceImplementation implements ProductReadService {
 
   @Override
   public PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, String category, double userLatitude, double userLongitude, double maxDistanceKM) {
+    UUID categoryID = parseCategoryId(category);
 
-    UUID categoryID = null;
+    validateGeolocation(userLatitude, userLongitude);
 
-    if (category != null && !category.trim().isEmpty()) {
-      categoryID = UUID.fromString(category);
-    }
-
-    if (userLatitude == 0 || userLongitude == 0) {
-      throw new MissingParameterException("User geolocation is required!");
-    }
 
     List<Product> allProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, null)); // Get products with available inventory only (using existing specification)
 
@@ -54,10 +50,9 @@ public class ProductReadServiceImplementation implements ProductReadService {
 
     // If no products found within range, fallback to HQ store products
     if (filteredProducts.isEmpty()) {
-      UUID hqStoreId = UUID.fromString("288705db-7fff-48d1-b4dd-e0a87136bdc6");
-
       // Get products from HQ store
-      List<Product> hqProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, hqStoreId));
+      List<Product> hqProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, hqStoreID));
+
 
       // Filter HQ products with nearest warehouse inventory
       var hqFilterResult = productDistanceFilterService.filterProductsByDistance(hqProducts, userLatitude, userLongitude, Double.MAX_VALUE); // No distance limit for HQ
@@ -65,7 +60,8 @@ public class ProductReadServiceImplementation implements ProductReadService {
       filteredResponses = hqFilterResult.responses();
     }
 
-    // Apply sorting BEFORE pagination based on pageable's sort
+    // Apply sorting before pagination
+
     applySorting(filteredResponses, pageable.getSort(), userLatitude, userLongitude);
 
     int start = (int) pageable.getOffset();
@@ -127,36 +123,52 @@ public class ProductReadServiceImplementation implements ProductReadService {
   @Override
   public PaginatedResponse<ProductResponse> getProductsByStoreID(UUID storeID, Pageable pageable, String search, String category) {
 
-    UUID categoryID = null;
-    if (category != null && !category.trim().isEmpty()) {
-      categoryID = UUID.fromString(category);
-    }
+    UUID categoryId = parseCategoryId(category);
 
     Page<Product> page = productRepository.findAll(
-        ProductSpecification.getFilteredProduct(search, categoryID, storeID), pageable);
+        ProductSpecification.getFilteredProduct(search, categoryId, storeID),
+        pageable
+    );
 
-    List<ProductResponse> filteredResponses = page.getContent().stream()
-        .map(product -> {
-          ProductResponse response = ProductResponse.from(product);
-
-          if (response.getProductVersionResponse() != null &&
-              response.getProductVersionResponse().getInventories() != null) {
-            response.getProductVersionResponse().setInventories(
-                response.getProductVersionResponse().getInventories().stream()
-                    .filter(inv -> inv.getDeletedAt() == null) // keep only active inventories
-                    .toList()
-            );
-          }
-
-          return response;
-        })
+    List<ProductResponse> responses = page.getContent().stream()
+        .map(ProductResponse::from)
+        .map(this::filterActiveInventories)
         .toList();
 
-    return PaginatedResponse.Utils.from(page, filteredResponses);
+    return PaginatedResponse.Utils.from(page, responses);
   }
 
   @Override
   public List<UniqueProduct> getAllUniqueProduct() {
     return productRepository.findAllUniqueProduct();
+  }
+
+  private UUID parseCategoryId(String category) {
+    return (category == null || category.isBlank())
+        ? null
+        : UUID.fromString(category);
+  }
+
+  private ProductResponse filterActiveInventories(ProductResponse response) {
+    if (hasInventories(response)) {
+
+      var inventories = response.getProductVersionResponse().getInventories().stream()
+          .filter(inv -> inv.getDeletedAt() == null)
+          .toList();
+
+      response.getProductVersionResponse().setInventories(inventories);
+    }
+    return response;
+  }
+
+  public boolean hasInventories(ProductResponse productResponse) {
+    return productResponse.getProductVersionResponse() != null &&
+        productResponse.getProductVersionResponse().getInventories() != null;
+  }
+
+  public void validateGeolocation(double latitude, double longitude) {
+    if (latitude == 0 || longitude == 0) {
+      throw new MissingParameterException("User geolocation is required!");
+    }
   }
 }

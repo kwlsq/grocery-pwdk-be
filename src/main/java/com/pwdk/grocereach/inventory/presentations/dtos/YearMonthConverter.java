@@ -13,7 +13,7 @@ public class YearMonthConverter implements Converter<String, YearMonth> {
     
     @Override
     public YearMonth convert(String source) {
-        if (source == null || source.trim().isEmpty()) {
+        if (source.trim().isEmpty()) {
             return null;
         }
         try {

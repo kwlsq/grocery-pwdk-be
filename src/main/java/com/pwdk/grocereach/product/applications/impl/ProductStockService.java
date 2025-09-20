@@ -2,9 +2,7 @@ package com.pwdk.grocereach.product.applications.impl;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;

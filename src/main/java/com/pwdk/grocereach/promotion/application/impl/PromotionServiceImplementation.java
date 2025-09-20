@@ -1,12 +1,6 @@
 package com.pwdk.grocereach.promotion.application.impl;
 
 import com.pwdk.grocereach.common.PaginatedResponse;
-import com.pwdk.grocereach.common.exception.ProductNotFoundException;
-import com.pwdk.grocereach.product.domains.entities.Product;
-import com.pwdk.grocereach.product.domains.entities.ProductPromotions;
-import com.pwdk.grocereach.product.infrastructures.repositories.ProductPromotionRepository;
-import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
-import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.promotion.application.PromotionService;
 import com.pwdk.grocereach.promotion.domain.entities.Promotions;
 import com.pwdk.grocereach.promotion.infrastructure.repositories.PromotionRepository;
@@ -18,7 +12,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class PromotionServiceImplementation implements PromotionService {
