@@ -27,6 +27,7 @@ public class ProductReadServiceImplementation implements ProductReadService {
   private final ProductDistanceFilterService productDistanceFilterService;
   private final UUID hqStoreID = UUID.fromString("288705db-7fff-48d1-b4dd-e0a87136bdc6");
 
+
   public ProductReadServiceImplementation (ProductRepository productRepository, ProductDistanceFilterService productDistanceFilterService) {
     this.productRepository = productRepository;
     this.productDistanceFilterService = productDistanceFilterService;
@@ -35,10 +36,10 @@ public class ProductReadServiceImplementation implements ProductReadService {
 
   @Override
   public PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, String category, double userLatitude, double userLongitude, double maxDistanceKM) {
-
     UUID categoryID = parseCategoryId(category);
 
     validateGeolocation(userLatitude, userLongitude);
+
 
     List<Product> allProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, null)); // Get products with available inventory only (using existing specification)
 
@@ -52,6 +53,7 @@ public class ProductReadServiceImplementation implements ProductReadService {
       // Get products from HQ store
       List<Product> hqProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, hqStoreID));
 
+
       // Filter HQ products with nearest warehouse inventory
       var hqFilterResult = productDistanceFilterService.filterProductsByDistance(hqProducts, userLatitude, userLongitude, Double.MAX_VALUE); // No distance limit for HQ
       filteredProducts = hqFilterResult.products();
@@ -59,6 +61,7 @@ public class ProductReadServiceImplementation implements ProductReadService {
     }
 
     // Apply sorting before pagination
+
     applySorting(filteredResponses, pageable.getSort(), userLatitude, userLongitude);
 
     int start = (int) pageable.getOffset();
@@ -168,5 +171,4 @@ public class ProductReadServiceImplementation implements ProductReadService {
       throw new MissingParameterException("User geolocation is required!");
     }
   }
-
 }
