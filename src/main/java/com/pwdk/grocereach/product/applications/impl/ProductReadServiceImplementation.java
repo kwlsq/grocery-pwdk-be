@@ -5,6 +5,7 @@ import com.pwdk.grocereach.common.exception.MissingParameterException;
 import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.product.applications.ProductReadService;
 import com.pwdk.grocereach.product.domains.entities.Product;
+import com.pwdk.grocereach.product.domains.entities.ProductVersions;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
 import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
@@ -127,36 +128,46 @@ public class ProductReadServiceImplementation implements ProductReadService {
   @Override
   public PaginatedResponse<ProductResponse> getProductsByStoreID(UUID storeID, Pageable pageable, String search, String category) {
 
-    UUID categoryID = null;
-    if (category != null && !category.trim().isEmpty()) {
-      categoryID = UUID.fromString(category);
-    }
+    UUID categoryId = parseCategoryId(category);
 
     Page<Product> page = productRepository.findAll(
-        ProductSpecification.getFilteredProduct(search, categoryID, storeID), pageable);
+        ProductSpecification.getFilteredProduct(search, categoryId, storeID),
+        pageable
+    );
 
-    List<ProductResponse> filteredResponses = page.getContent().stream()
-        .map(product -> {
-          ProductResponse response = ProductResponse.from(product);
-
-          if (response.getProductVersionResponse() != null &&
-              response.getProductVersionResponse().getInventories() != null) {
-            response.getProductVersionResponse().setInventories(
-                response.getProductVersionResponse().getInventories().stream()
-                    .filter(inv -> inv.getDeletedAt() == null) // keep only active inventories
-                    .toList()
-            );
-          }
-
-          return response;
-        })
+    List<ProductResponse> responses = page.getContent().stream()
+        .map(ProductResponse::from)
+        .map(this::filterActiveInventories)
         .toList();
 
-    return PaginatedResponse.Utils.from(page, filteredResponses);
+    return PaginatedResponse.Utils.from(page, responses);
   }
 
   @Override
   public List<UniqueProduct> getAllUniqueProduct() {
     return productRepository.findAllUniqueProduct();
+  }
+
+  private UUID parseCategoryId(String category) {
+    return (category == null || category.isBlank())
+        ? null
+        : UUID.fromString(category);
+  }
+
+  private ProductResponse filterActiveInventories(ProductResponse response) {
+    if (hasInventories(response)) {
+
+      var inventories = response.getProductVersionResponse().getInventories().stream()
+          .filter(inv -> inv.getDeletedAt() == null)
+          .toList();
+
+      response.getProductVersionResponse().setInventories(inventories);
+    }
+    return response;
+  }
+
+  public boolean hasInventories(ProductResponse productResponse) {
+    return productResponse.getProductVersionResponse() != null &&
+        productResponse.getProductVersionResponse().getInventories() != null;
   }
 }
