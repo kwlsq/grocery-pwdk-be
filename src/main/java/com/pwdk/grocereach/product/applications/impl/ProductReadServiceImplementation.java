@@ -5,7 +5,6 @@ import com.pwdk.grocereach.common.exception.MissingParameterException;
 import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.product.applications.ProductReadService;
 import com.pwdk.grocereach.product.domains.entities.Product;
-import com.pwdk.grocereach.product.domains.entities.ProductVersions;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
 import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
@@ -26,6 +25,7 @@ public class ProductReadServiceImplementation implements ProductReadService {
 
   private final ProductRepository productRepository;
   private final ProductDistanceFilterService productDistanceFilterService;
+  private final UUID hqStoreID = UUID.fromString("288705db-7fff-48d1-b4dd-e0a87136bdc6");
 
   public ProductReadServiceImplementation (ProductRepository productRepository, ProductDistanceFilterService productDistanceFilterService) {
     this.productRepository = productRepository;
@@ -36,15 +36,9 @@ public class ProductReadServiceImplementation implements ProductReadService {
   @Override
   public PaginatedResponse<ProductResponse> getAllProducts(Pageable pageable, String search, String category, double userLatitude, double userLongitude, double maxDistanceKM) {
 
-    UUID categoryID = null;
+    UUID categoryID = parseCategoryId(category);
 
-    if (category != null && !category.trim().isEmpty()) {
-      categoryID = UUID.fromString(category);
-    }
-
-    if (userLatitude == 0 || userLongitude == 0) {
-      throw new MissingParameterException("User geolocation is required!");
-    }
+    validateGeolocation(userLatitude, userLongitude);
 
     List<Product> allProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, null)); // Get products with available inventory only (using existing specification)
 
@@ -55,10 +49,8 @@ public class ProductReadServiceImplementation implements ProductReadService {
 
     // If no products found within range, fallback to HQ store products
     if (filteredProducts.isEmpty()) {
-      UUID hqStoreId = UUID.fromString("288705db-7fff-48d1-b4dd-e0a87136bdc6");
-
       // Get products from HQ store
-      List<Product> hqProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, hqStoreId));
+      List<Product> hqProducts = productRepository.findAll(ProductSpecification.searchByKeyword(search, categoryID, hqStoreID));
 
       // Filter HQ products with nearest warehouse inventory
       var hqFilterResult = productDistanceFilterService.filterProductsByDistance(hqProducts, userLatitude, userLongitude, Double.MAX_VALUE); // No distance limit for HQ
@@ -66,7 +58,7 @@ public class ProductReadServiceImplementation implements ProductReadService {
       filteredResponses = hqFilterResult.responses();
     }
 
-    // Apply sorting BEFORE pagination based on pageable's sort
+    // Apply sorting before pagination
     applySorting(filteredResponses, pageable.getSort(), userLatitude, userLongitude);
 
     int start = (int) pageable.getOffset();
@@ -170,4 +162,11 @@ public class ProductReadServiceImplementation implements ProductReadService {
     return productResponse.getProductVersionResponse() != null &&
         productResponse.getProductVersionResponse().getInventories() != null;
   }
+
+  public void validateGeolocation(double latitude, double longitude) {
+    if (latitude == 0 || longitude == 0) {
+      throw new MissingParameterException("User geolocation is required!");
+    }
+  }
+
 }
