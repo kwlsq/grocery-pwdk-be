@@ -1,6 +1,5 @@
 package com.pwdk.grocereach.product.applications.impl;
 
-import com.pwdk.grocereach.common.exception.CategoryNotFoundException;
 import com.pwdk.grocereach.product.applications.ProductCategoryService;
 import com.pwdk.grocereach.product.domains.entities.ProductCategory;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductCategoryRepository;
@@ -11,7 +10,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 public class ProductCategoryServiceImplementation implements ProductCategoryService {

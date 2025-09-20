@@ -1,6 +1,5 @@
 package com.pwdk.grocereach.store.domains.entities;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.pwdk.grocereach.Auth.Domain.Entities.User;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import jakarta.persistence.*;

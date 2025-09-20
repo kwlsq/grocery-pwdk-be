@@ -1,8 +1,6 @@
 package com.pwdk.grocereach.product.presentations.dtos;
 
 import com.pwdk.grocereach.product.domains.entities.Product;
-import com.pwdk.grocereach.product.domains.entities.ProductPromotions;
-import com.pwdk.grocereach.promotion.domain.entities.Promotions;
 import com.pwdk.grocereach.promotion.presentation.dto.PromotionResponse;
 import lombok.AllArgsConstructor;
 import lombok.Data;

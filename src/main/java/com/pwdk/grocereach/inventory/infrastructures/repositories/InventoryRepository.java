@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.UUID;
 
 import com.pwdk.grocereach.inventory.domains.interfaces.InventoryMonthlyReport;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,7 +22,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
     @Query(value = """
     WITH latest_version_per_warehouse AS (
-        SELECT 
+        SELECT\s
             p.id as product_id,
             w.id as warehouse_id,
             to_char(i.created_at, 'YYYY-MM') as month,
@@ -44,7 +42,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
         GROUP BY p.id, w.id, to_char(i.created_at, 'YYYY-MM')
     ),
     latest_stock AS (
-        SELECT 
+        SELECT\s
             lv.product_id,
             lv.warehouse_id,
             lv.month,
@@ -92,8 +90,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
     JOIN product_version pv ON pv.id = i.product_version_id
     JOIN product p ON p.id = pv.product_id
     JOIN latest_stock ls ON (
-        ls.product_id = p.id 
-        AND ls.warehouse_id = w.id 
+        ls.product_id = p.id\s
+        AND ls.warehouse_id = w.id\s
         AND ls.month = to_char(i.created_at, 'YYYY-MM')
     )
     WHERE p.deleted_at IS NULL
@@ -116,7 +114,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
         p.name,
         w.name,
         month
-    """,
+   \s""",
         nativeQuery = true)
     List<InventoryMonthlyReport> findAggregatedInventoryMonthlyReport(
         @Param("storeId") UUID storeId,
@@ -127,7 +125,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
     );
 
     @Query(value = """
-    SELECT i.* 
+    SELECT i.*\s
     FROM inventory i
     JOIN warehouses w ON w.id = i.warehouse_id
     JOIN stores s ON s.id = w.store_id
@@ -139,7 +137,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
       AND i.created_at >= :startDate
       AND i.created_at < :endDate
     ORDER BY p.name, pv.version_number, i.created_at
-    """,
+   \s""",
         nativeQuery = true
     )
     List<Inventory> findInventoryByProduct(

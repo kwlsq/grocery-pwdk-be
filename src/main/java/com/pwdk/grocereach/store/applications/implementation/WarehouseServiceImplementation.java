@@ -1,12 +1,7 @@
 package com.pwdk.grocereach.store.applications.implementation;
 
-import com.pwdk.grocereach.Auth.Domain.Entities.User;
-import com.pwdk.grocereach.Auth.Infrastructure.Repositories.UserRepository;
 import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.common.exception.StoreNotFoundException;
-import com.pwdk.grocereach.product.domains.entities.Product;
-import com.pwdk.grocereach.product.infrastructures.specification.ProductSpecification;
-import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.store.applications.WarehouseServices;
 import com.pwdk.grocereach.store.domains.entities.Stores;
 import com.pwdk.grocereach.store.domains.entities.Warehouse;
@@ -21,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -29,13 +23,11 @@ public class WarehouseServiceImplementation implements WarehouseServices {
 
   private final WarehouseRepository warehouseRepository;
   private final StoresRepository storesRepository;
-  private final UserRepository userRepository;
   private final WarehouseRepoImpl warehouseRepoImpl;
 
-  public WarehouseServiceImplementation(WarehouseRepository warehouseRepository, StoresRepository storesRepository, UserRepository userRepository, WarehouseRepoImpl warehouseRepoImpl) {
+  public WarehouseServiceImplementation(WarehouseRepository warehouseRepository, StoresRepository storesRepository, WarehouseRepoImpl warehouseRepoImpl) {
     this.warehouseRepository = warehouseRepository;
     this.storesRepository = storesRepository;
-    this.userRepository = userRepository;
     this.warehouseRepoImpl = warehouseRepoImpl;
   }
 

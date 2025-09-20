@@ -1,9 +1,6 @@
 package com.pwdk.grocereach.product.presentations.dtos;
 
 import com.pwdk.grocereach.inventory.presentations.dtos.WarehouseStock;
-import com.pwdk.grocereach.product.domains.entities.Product;
-import com.pwdk.grocereach.product.domains.entities.ProductVersions;
-import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -12,8 +9,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

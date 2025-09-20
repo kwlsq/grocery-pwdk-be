@@ -1,6 +1,5 @@
 package com.pwdk.grocereach.store.domains.entities;
 
-import com.pwdk.grocereach.Auth.Domain.Entities.User;
 import com.pwdk.grocereach.inventory.domains.entities.Inventory;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;

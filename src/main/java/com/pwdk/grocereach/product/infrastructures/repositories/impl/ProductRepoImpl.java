@@ -4,7 +4,6 @@ import com.pwdk.grocereach.common.exception.ProductAlreadyExistException;
 import com.pwdk.grocereach.common.exception.ProductNotFoundException;
 import com.pwdk.grocereach.product.domains.entities.Product;
 import com.pwdk.grocereach.product.domains.entities.ProductCategory;
-import com.pwdk.grocereach.product.infrastructures.repositories.ProductCategoryRepository;
 import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
 import com.pwdk.grocereach.product.presentations.dtos.CreateProductRequest;
 import com.pwdk.grocereach.store.domains.entities.Stores;
