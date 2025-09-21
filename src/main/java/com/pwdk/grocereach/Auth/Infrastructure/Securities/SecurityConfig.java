@@ -79,7 +79,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**","/api/v1/geocode/**").permitAll()
-                        .requestMatchers("/api/v1/geocoding/**").permitAll()
+                        .requestMatchers("/api/v1/geocoding/**","/api/v1/checkout/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/public/**").permitAll()
                         .requestMatchers("/api/v1/locations/**").permitAll()
                         .anyRequest().authenticated()

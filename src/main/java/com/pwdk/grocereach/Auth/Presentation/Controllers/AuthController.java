@@ -25,13 +25,34 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
-            authService.register(request);
-            return ResponseEntity.ok("Registration successful. Please check your email to verify your account.");
+            LoginResponse loginResponse = authService.register(request);
+
+            // Set cookies for auto-login after registration
+            ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", loginResponse.getAccessToken().getValue())
+                    .httpOnly(true)
+                    .secure(false) // Set to true in production with HTTPS
+                    .path("/")
+                    .maxAge(15 * 60) // 15 minutes
+                    .sameSite("Lax")
+                    .build();
+
+            ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
+                    .httpOnly(true)
+                    .secure(false) // Set to true in production with HTTPS
+                    .path("/api/v1/auth")
+                    .maxAge(30 * 24 * 60 * 60) // 30 days
+                    .sameSite("Lax")
+                    .build();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                    .body("Registration successful. You are now logged in. Please check your email to verify your account.");
+
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody VerifyRequest request) {
