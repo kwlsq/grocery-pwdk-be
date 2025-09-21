@@ -1,8 +1,10 @@
 package com.pwdk.grocereach.User.Presentation.Controllers; // Or your correct controllers package
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
+import com.pwdk.grocereach.User.Presentation.Dto.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,10 +32,6 @@ import com.pwdk.grocereach.Auth.Domain.Enums.UserRole;
 import com.pwdk.grocereach.Auth.Infrastructure.Securities.CustomUserDetails;
 import com.pwdk.grocereach.Auth.Presentation.Dto.UserResponse;
 import com.pwdk.grocereach.User.Application.Services.AddressService;
-import com.pwdk.grocereach.User.Presentation.Dto.AddressRequest;
-import com.pwdk.grocereach.User.Presentation.Dto.AddressResponse;
-import com.pwdk.grocereach.User.Presentation.Dto.UpdateEmailRequest;
-import com.pwdk.grocereach.User.Presentation.Dto.UpdateProfileRequest;
 import com.pwdk.grocereach.common.Response;
 
 import jakarta.validation.Valid;
@@ -150,4 +148,32 @@ public class UserController {
         userService.requestEmailChange(authentication.getName(), request);
         return ResponseEntity.ok("A verification link has been sent to your new email address. Please check your inbox to confirm the change.");
     }
-}
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @Valid @RequestBody ChangePasswordRequest request,
+            Authentication authentication) {
+
+        try {
+            String userId = authentication.getName();
+            System.out.println("User ID from authentication: " + userId);
+
+            userService.changePassword(userId, request);
+
+            return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", e.getMessage()));
+
+        } catch (RuntimeException e) {
+            System.out.println("RuntimeException: " + e.getMessage());
+            return ResponseEntity.status(404)
+                    .body(Map.of("message", e.getMessage()));
+
+        } catch (Exception e) {
+            System.out.println("General Exception: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500)
+                    .body(Map.of("message", "Failed to change password"));
+        }
+    }}

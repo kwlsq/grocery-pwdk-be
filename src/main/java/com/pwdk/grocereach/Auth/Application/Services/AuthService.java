@@ -15,6 +15,8 @@ public interface AuthService {
     void confirmPasswordReset(String token, String newPassword);
     UserResponse registerStoreAdmin(RegisterRequest request);
     void confirmEmailChange(String token);
+    void validateVerificationToken(String token);
+
 
 }
 

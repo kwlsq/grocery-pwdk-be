@@ -30,7 +30,7 @@ public class AuthController {
             // Set cookies for auto-login after registration
             ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", loginResponse.getAccessToken().getValue())
                     .httpOnly(true)
-                    .secure(false) // Set to true in production with HTTPS
+                    .secure(false)
                     .path("/")
                     .maxAge(15 * 60) // 15 minutes
                     .sameSite("Lax")
@@ -38,7 +38,7 @@ public class AuthController {
 
             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
                     .httpOnly(true)
-                    .secure(false) // Set to true in production with HTTPS
+                    .secure(false)
                     .path("/api/v1/auth")
                     .maxAge(30 * 24 * 60 * 60) // 30 days
                     .sameSite("Lax")
@@ -167,5 +167,15 @@ public class AuthController {
     public ResponseEntity<String> confirmEmailChange(@RequestParam("token") String token) {
         authService.confirmEmailChange(token);
         return ResponseEntity.ok("Your email address has been successfully updated.");
+    }
+
+    @GetMapping("/verify/check-token")
+    public ResponseEntity<?> checkToken(@RequestParam String token) {
+        try {
+            authService.validateVerificationToken(token);
+            return ResponseEntity.ok("Token is valid");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class EmailServiceImpl implements EmailService {
@@ -25,7 +27,10 @@ public class EmailServiceImpl implements EmailService {
 
             helper.setTo(to);
             helper.setSubject("Verify Your Grocereach Account");
-            String verificationUrl = "http://localhost:3000/verify/" + token;
+
+            // Include email parameter in the verification URL
+            String verificationUrl = "http://localhost:3000/verify/" + token + "?email=" + URLEncoder.encode(to, StandardCharsets.UTF_8);
+
             String htmlMsg = "<body style='font-family: Arial, sans-serif; line-height: 1.6; color: #333;'>"
                     + "<div style='max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;'>"
                     + "<h2 style='color: #059669;'>Welcome to Grocereach!</h2>"
@@ -50,7 +55,6 @@ public class EmailServiceImpl implements EmailService {
                     + "</body>";
 
             helper.setText(htmlMsg, true);
-
             mailSender.send(message);
         } catch (Exception e) {
             throw new RuntimeException("Failed to send verification email", e);

@@ -20,4 +20,6 @@ public interface AddressRepository extends JpaRepository<Address, UUID> {
     @Modifying
     @Query("UPDATE Address a SET a.isPrimary = false WHERE a.user = :user AND a.isPrimary = true")
     void unsetAllPrimaryAddressesForUser(@Param("user") User user);
+    List<Address> findByUserAndDeletedAtIsNull(User user);
+    Optional<Address> findByIdAndUserAndDeletedAtIsNull(UUID id, User user);
 }
