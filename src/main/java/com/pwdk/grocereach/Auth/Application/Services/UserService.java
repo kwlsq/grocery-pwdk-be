@@ -2,6 +2,7 @@ package com.pwdk.grocereach.Auth.Application.Services;
 
 import java.util.UUID;
 
+import com.pwdk.grocereach.User.Presentation.Dto.ChangePasswordRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -21,5 +22,7 @@ public interface UserService extends UserDetailsService {
     void deleteStoreAdmin(UUID userID);
     UserResponse updateStoreAdmin(UUID useID, UpdateUserRequest request);
     void requestEmailChange(String currentUserEmail, UpdateEmailRequest request);
+    void changePassword(String currentUserEmail, ChangePasswordRequest request);
+
 
 }

@@ -25,6 +25,7 @@ import com.pwdk.grocereach.Auth.Presentation.Dto.UpdateUserRequest;
 import com.pwdk.grocereach.Auth.Presentation.Dto.UserResponse;
 import com.pwdk.grocereach.User.Presentation.Dto.UpdateEmailRequest;
 import com.pwdk.grocereach.User.Presentation.Dto.UpdateProfileRequest;
+import com.pwdk.grocereach.User.Presentation.Dto.ChangePasswordRequest;
 import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.image.applications.CloudinaryService;
 
@@ -135,5 +136,28 @@ public class UserServiceImpl implements UserService {
 
         emailService.sendVerificationEmail(user.getFullName(),token
         );
+    }
+
+    @Override
+    public void changePassword(String userId, ChangePasswordRequest request) {
+        System.out.println("Attempting to change password for user ID: " + userId);
+
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userId));
+
+        System.out.println("User found: " + user.getEmail());
+
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("New password must be different from current password");
+        }
+
+        String encodedNewPassword = passwordEncoder.encode(request.getNewPassword());
+        user.setPassword(encodedNewPassword);
+
+        userRepository.save(user);
     }
 }

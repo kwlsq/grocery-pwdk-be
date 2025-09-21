@@ -23,6 +23,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -156,12 +157,23 @@ public class AuthServiceImpl implements AuthService {
         if (user.isVerified()) {
             throw new IllegalStateException("This account has already been verified.");
         }
-
+        invalidateExistingVerificationTokens(user.getId());
         String token = UUID.randomUUID().toString();
         String redisKey = "verification_token:" + token;
         redisTemplate.opsForValue().set(redisKey, user.getId().toString(), 1, TimeUnit.HOURS);
 
         emailService.sendVerificationEmail(user.getEmail(), token);
+    }
+
+    private void invalidateExistingVerificationTokens(UUID userId) {
+        Set<String> keys = redisTemplate.keys("verification_token:*");
+
+        for (String key : keys) {
+            String storedUserId = redisTemplate.opsForValue().get(key);
+            if (userId.toString().equals(storedUserId)) {
+                redisTemplate.delete(key);
+            }
+        }
     }
     @Override
     public void requestPasswordReset(String email) {
@@ -229,24 +241,34 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalStateException("Email change token is invalid or has expired.");
         }
 
-        // The stored value is "userId:newEmail"
         String[] parts = storedValue.split(":");
         UUID userId = UUID.fromString(parts[0]);
         String newEmail = parts[1];
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found for this token."));
-
-        // Check again to prevent a race condition where the email was taken
-        // after the initial request but before confirmation.
         if (userRepository.findByEmail(newEmail).isPresent()) {
             throw new IllegalStateException("Email address has been taken by another account.");
         }
 
         user.setEmail(newEmail);
         userRepository.save(user);
-
-        // Invalidate the token so it can't be used again
         redisTemplate.delete(redisKey);
+    }
+    @Override
+    public void validateVerificationToken(String token) {
+        String redisKey = "verification_token:" + token;
+        String userId = redisTemplate.opsForValue().get(redisKey);
+
+        if (userId == null) {
+            throw new IllegalStateException("Verification token is invalid or has expired.");
+        }
+
+        User user = userRepository.findById(UUID.fromString(userId))
+                .orElseThrow(() -> new IllegalStateException("User associated with token not found."));
+
+        if (user.isVerified()) {
+            throw new IllegalStateException("This account has already been verified.");
+        }
     }
 }
