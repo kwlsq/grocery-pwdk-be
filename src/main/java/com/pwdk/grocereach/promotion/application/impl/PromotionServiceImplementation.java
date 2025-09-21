@@ -3,6 +3,7 @@ package com.pwdk.grocereach.promotion.application.impl;
 import com.pwdk.grocereach.common.PaginatedResponse;
 import com.pwdk.grocereach.promotion.application.PromotionService;
 import com.pwdk.grocereach.promotion.domain.entities.Promotions;
+import com.pwdk.grocereach.promotion.domain.enums.PromotionUnit;
 import com.pwdk.grocereach.promotion.infrastructure.repositories.PromotionRepository;
 import com.pwdk.grocereach.promotion.infrastructure.specifications.PromotionSpecification;
 import com.pwdk.grocereach.promotion.presentation.dto.CreatePromotionRequest;
@@ -37,9 +38,9 @@ public class PromotionServiceImplementation implements PromotionService {
   }
 
   @Override
-  public PaginatedResponse<PromotionResponse> getAllPromotions(Pageable pageable, String search) {
+  public PaginatedResponse<PromotionResponse> getAllPromotions(Pageable pageable, String search, PromotionUnit unit) {
 
-    Page<Promotions> promotions = promotionRepository.findAll(PromotionSpecification.getFilteredStore(search), pageable);
+    Page<Promotions> promotions = promotionRepository.findAll(PromotionSpecification.getFilteredStore(search, unit), pageable);
 
     List<PromotionResponse> promotionResponses = promotions.getContent().stream()
         .map(PromotionResponse::from)

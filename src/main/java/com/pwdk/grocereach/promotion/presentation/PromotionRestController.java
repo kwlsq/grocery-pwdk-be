@@ -2,6 +2,7 @@ package com.pwdk.grocereach.promotion.presentation;
 
 import com.pwdk.grocereach.common.Response;
 import com.pwdk.grocereach.promotion.application.PromotionService;
+import com.pwdk.grocereach.promotion.domain.enums.PromotionUnit;
 import com.pwdk.grocereach.promotion.presentation.dto.CreatePromotionRequest;
 import com.pwdk.grocereach.store.presentations.StoreRestController;
 import org.springframework.data.domain.PageRequest;
@@ -27,13 +28,14 @@ public class PromotionRestController {
                                             @RequestParam(value = "size", defaultValue = "12") int size,
                                             @RequestParam(value = "sortBy", defaultValue = "id") String sortBy,
                                             @RequestParam(value = "sortDirection", defaultValue = "asc") String sortDirection,
-                                            @RequestParam(value = "search", defaultValue = "") String search) {
+                                            @RequestParam(value = "search", defaultValue = "") String search,
+                                            @RequestParam(value = "unit", defaultValue = "") PromotionUnit unit) {
 
     Pageable pageable = PageRequest.of(page, size, Sort.by(getSortOrder(sortBy, sortDirection)));
 
     return Response.successfulResponse(
         "Successfully fetched all promotions",
-        promotionService.getAllPromotions(pageable, search)
+        promotionService.getAllPromotions(pageable, search, unit)
     );
   }
 
