@@ -109,7 +109,7 @@ public class UserController {
 
         return Response.successfulResponse(
                 "Successfully fetch all user",
-                userService.getAllUser(pageable, role)
+                userService.getAllUser(pageable, role, search)
         );
     }
 

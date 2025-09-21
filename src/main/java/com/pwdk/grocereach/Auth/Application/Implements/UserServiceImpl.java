@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import com.pwdk.grocereach.Auth.Infrastructure.specifications.UserSpecification;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -75,14 +76,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public PaginatedResponse<UserResponse> getAllUser(Pageable pageable, UserRole role) {
-        Page<User> page;
-
-        if (role != null) {
-            page = userRepository.findAllVerifiedByRole(role, pageable);
-        } else {
-            page = userRepository.findAllByVerifiedTrue(pageable);
-        }
+    public PaginatedResponse<UserResponse> getAllUser(Pageable pageable, UserRole role, String search) {
+        Page<User> page = userRepository.findAll(UserSpecification.getFilteredUsers(search, role), pageable);
 
         List<UserResponse> filteredResponses = page.getContent().stream()
                 .map(UserResponse::new)

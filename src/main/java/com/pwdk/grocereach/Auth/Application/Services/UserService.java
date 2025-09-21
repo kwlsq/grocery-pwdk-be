@@ -18,7 +18,7 @@ import com.pwdk.grocereach.common.PaginatedResponse;
 public interface UserService extends UserDetailsService {
     UserResponse updateUserProfile(String userId, UpdateProfileRequest request, MultipartFile profileImage);
     UserDetails loadUserById(UUID id);
-    PaginatedResponse<UserResponse> getAllUser(Pageable pageable, UserRole role);
+    PaginatedResponse<UserResponse> getAllUser(Pageable pageable, UserRole role, String search);
     void deleteStoreAdmin(UUID userID);
     UserResponse updateStoreAdmin(UUID useID, UpdateUserRequest request);
     void requestEmailChange(String currentUserEmail, UpdateEmailRequest request);
