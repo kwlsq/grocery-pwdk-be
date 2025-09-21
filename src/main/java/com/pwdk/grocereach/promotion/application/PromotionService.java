@@ -7,5 +7,5 @@ import org.springframework.data.domain.Pageable;
 
 public interface PromotionService {
   PromotionResponse createPromotion(CreatePromotionRequest request);
-  PaginatedResponse<PromotionResponse> getAllPromotions(Pageable pageable);
+  PaginatedResponse<PromotionResponse> getAllPromotions(Pageable pageable, String search);
 }
