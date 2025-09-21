@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,7 +33,7 @@ public class AddressServiceImpl implements AddressService {
     @Override
     public List<AddressResponse> getUserAddresses(String userEmail) {
         User user = findUserByEmail(userEmail);
-        return addressRepository.findByUser(user).stream()
+        return addressRepository.findByUserAndDeletedAtIsNull(user).stream()
                 .map(AddressResponse::new)
                 .collect(Collectors.toList());
     }
@@ -40,12 +41,12 @@ public class AddressServiceImpl implements AddressService {
     @Override
     public AddressResponse createAddress(String userEmail, AddressRequest request) {
         User user = findUserByEmail(userEmail);
-        List<Address> existingAddresses = addressRepository.findByUser(user);
+        List<Address> existingAddresses = addressRepository.findByUserAndDeletedAtIsNull(user);
         if (existingAddresses.isEmpty()) {
             request.setPrimary(true);
         }
         if (request.isPrimary()) {
-            addressRepository.unsetAllPrimaryAddressesForUser(user);
+            unsetAllPrimaryAddressesForUser(user);
         }
         Address newAddress = new Address();
         mapRequestToEntity(request, newAddress);
@@ -57,10 +58,10 @@ public class AddressServiceImpl implements AddressService {
     @Override
     public AddressResponse updateAddress(String userEmail, UUID addressId, AddressRequest request) {
         User user = findUserByEmail(userEmail);
-        Address address = findAddressByIdAndUser(addressId, user);
+        Address address = findActiveAddressByIdAndUser(addressId, user);
 
         if (request.isPrimary() && !address.isPrimary()) {
-            addressRepository.unsetAllPrimaryAddressesForUser(user);
+            unsetAllPrimaryAddressesForUser(user);
         }
 
         mapRequestToEntity(request, address);
@@ -71,8 +72,30 @@ public class AddressServiceImpl implements AddressService {
     @Override
     public void deleteAddress(String userEmail, UUID addressId) {
         User user = findUserByEmail(userEmail);
-        Address address = findAddressByIdAndUser(addressId, user);
-        addressRepository.delete(address);
+        Address address = findActiveAddressByIdAndUser(addressId, user);
+
+        address.setDeletedAt(LocalDateTime.now());
+        addressRepository.save(address);
+
+        if (address.isPrimary()) {
+            setNewPrimaryAddressIfNeeded(user);
+        }
+    }
+
+    private void setNewPrimaryAddressIfNeeded(User user) {
+        List<Address> activeAddresses = addressRepository.findByUserAndDeletedAtIsNull(user);
+
+        if (!activeAddresses.isEmpty()) {
+            Address newPrimaryAddress = activeAddresses.get(0);
+            newPrimaryAddress.setPrimary(true);
+            addressRepository.save(newPrimaryAddress);
+        }
+    }
+
+    private void unsetAllPrimaryAddressesForUser(User user) {
+        List<Address> activeAddresses = addressRepository.findByUserAndDeletedAtIsNull(user);
+        activeAddresses.forEach(address -> address.setPrimary(false));
+        addressRepository.saveAll(activeAddresses);
     }
 
     private void mapRequestToEntity(AddressRequest request, Address address) {
@@ -96,9 +119,8 @@ public class AddressServiceImpl implements AddressService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    private Address findAddressByIdAndUser(UUID addressId, User user) {
-        return addressRepository.findByIdAndUser(addressId, user)
+    private Address findActiveAddressByIdAndUser(UUID addressId, User user) {
+        return addressRepository.findByIdAndUserAndDeletedAtIsNull(addressId, user)
                 .orElseThrow(() -> new RuntimeException("Address not found or does not belong to user"));
     }
 }
-

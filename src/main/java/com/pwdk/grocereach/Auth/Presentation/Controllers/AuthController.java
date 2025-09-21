@@ -25,13 +25,34 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
         try {
-            authService.register(request);
-            return ResponseEntity.ok("Registration successful. Please check your email to verify your account.");
+            LoginResponse loginResponse = authService.register(request);
+
+            // Set cookies for auto-login after registration
+            ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", loginResponse.getAccessToken().getValue())
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/")
+                    .maxAge(15 * 60) // 15 minutes
+                    .sameSite("Lax")
+                    .build();
+
+            ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
+                    .httpOnly(true)
+                    .secure(false)
+                    .path("/api/v1/auth")
+                    .maxAge(30 * 24 * 60 * 60) // 30 days
+                    .sameSite("Lax")
+                    .build();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
+                    .body("Registration successful. You are now logged in. Please check your email to verify your account.");
+
         } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
-
 
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody VerifyRequest request) {
@@ -146,5 +167,15 @@ public class AuthController {
     public ResponseEntity<String> confirmEmailChange(@RequestParam("token") String token) {
         authService.confirmEmailChange(token);
         return ResponseEntity.ok("Your email address has been successfully updated.");
+    }
+
+    @GetMapping("/verify/check-token")
+    public ResponseEntity<?> checkToken(@RequestParam String token) {
+        try {
+            authService.validateVerificationToken(token);
+            return ResponseEntity.ok("Token is valid");
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
