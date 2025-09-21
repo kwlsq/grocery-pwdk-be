@@ -41,7 +41,7 @@ public class AuthServiceImpl implements AuthService {
     @Qualifier("refreshTokenDecoder")
 
     @Override
-    public User register(RegisterRequest request) {
+    public LoginResponse register(RegisterRequest request) {
         userRepository.findByEmail(request.getEmail()).ifPresent(existingUser -> {
             if (existingUser.isVerified()) {
                 throw new IllegalStateException("Email is already in use.");
@@ -63,7 +63,20 @@ public class AuthServiceImpl implements AuthService {
 
         emailService.sendVerificationEmail(savedUser.getEmail(), token);
 
-        return savedUser;
+        // Auto-login after registration (user can access app but not verified)
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                new CustomUserDetails(savedUser),
+                null,
+                new CustomUserDetails(savedUser).getAuthorities()
+        );
+
+        Token accessToken = tokenGeneratorService.generateAccessToken(authentication);
+        Token refreshToken = tokenGeneratorService.generateRefreshToken(authentication);
+
+        String refreshRedisKey = "refresh_token:" + savedUser.getId().toString();
+        redisTemplate.opsForValue().set(refreshRedisKey, refreshToken.getValue(), 30, TimeUnit.DAYS);
+
+        return new LoginResponse(accessToken, refreshToken);
     }
 
     @Override

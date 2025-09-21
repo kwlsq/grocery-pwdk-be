@@ -42,15 +42,11 @@ public class WarehouseServiceImplementation implements WarehouseServices {
   @Override
   public PaginatedResponse<WarehouseResponse> getAllOwnedWarehouse(UUID storeID, Pageable pageable) {
 
-    // Fetch warehouses (assuming correct entity type)
     Page<Warehouse> page = warehouseRepository.findAllByStore_Id(storeID, pageable);
 
-    // Convert to response DTOs and filter empty inventories
     List<WarehouseResponse> filteredResponses = page.getContent().stream()
         .map(WarehouseResponse::from)
         .toList();
-
-    // Return paginated response (metadata based on original page)
     return PaginatedResponse.Utils.from(page, filteredResponses);
   }
 

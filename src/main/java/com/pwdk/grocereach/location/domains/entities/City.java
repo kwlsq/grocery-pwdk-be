@@ -19,6 +19,9 @@ public class City {
     @Column(name = "city_name")
     private String name;
 
+    @Column(name = "rajaongkir_id", unique = true)
+    private Integer rajaOngkirId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_province_code", referencedColumnName = "province_code")
     @JsonIgnore

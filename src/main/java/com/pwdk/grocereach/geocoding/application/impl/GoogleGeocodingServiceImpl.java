@@ -34,11 +34,8 @@ public class GoogleGeocodingServiceImpl implements GeocodingService {
     @Override
     public GeocodingResponse geocode(GeocodingRequest request) {
         long startTime = System.currentTimeMillis();
-
         log.info("Starting Google Maps geocoding for address: {}", request.getAddress());
-
         try {
-            // Build URL with parameters
             String url = buildUrl(request);
             log.debug("Google Maps Request URL: {}", url);
 
@@ -55,7 +52,6 @@ public class GoogleGeocodingServiceImpl implements GeocodingService {
             JsonNode response = mapper.readTree(httpResponse.body());
 
             log.info("🔍 RAW RESPONSE: {}", httpResponse.body());
-            // Process response
             GeocodingResponse result = processResponse(response);
             result.setProcessingTimeMs(System.currentTimeMillis() - startTime);
 
@@ -85,8 +81,6 @@ public class GoogleGeocodingServiceImpl implements GeocodingService {
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(baseUrl)
                 .queryParam("address", request.getAddress())
                 .queryParam("key", config.getApiKey());
-
-        // Always add language and region with defaults
         String language = request.getLanguage() != null && !request.getLanguage().trim().isEmpty()
                 ? request.getLanguage() : "id";
         builder.queryParam("language", language);
@@ -101,9 +95,6 @@ public class GoogleGeocodingServiceImpl implements GeocodingService {
 
         log.debug("Built URL with language={}, region={}", language, region);
         return builder.toUriString();
-    }
-    public String buildUrlForDebug(GeocodingRequest request) {
-        return buildUrl(request);
     }
 
     private GeocodingResponse processResponse(JsonNode jsonResponse) {
@@ -239,8 +230,6 @@ public class GoogleGeocodingServiceImpl implements GeocodingService {
 
                 prediction.setDescription(predictionNode.get("description").asText());
                 prediction.setPlaceId(predictionNode.get("place_id").asText());
-
-                // Process matched_substrings if present
                 List<PlacesAutocompleteResponse.Prediction.MatchedSubstring> matchedSubstrings = new ArrayList<>();
                 if (predictionNode.has("matched_substrings")) {
                     JsonNode matchedArray = predictionNode.get("matched_substrings");
