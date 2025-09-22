@@ -40,7 +40,7 @@ public class PromotionRestController {
   }
 
   @PostMapping
-  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
   public ResponseEntity<?> createPromotion(@RequestBody CreatePromotionRequest request) {
     return Response.successfulResponse(
         "Successfully create promotion",

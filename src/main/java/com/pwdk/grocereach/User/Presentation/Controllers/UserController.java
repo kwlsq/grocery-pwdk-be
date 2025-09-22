@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.pwdk.grocereach.Auth.Presentation.Dto.UpdateUserRequest;
 import com.pwdk.grocereach.User.Presentation.Dto.*;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -176,4 +177,13 @@ public class UserController {
             return ResponseEntity.status(500)
                     .body(Map.of("message", "Failed to change password"));
         }
-    }}
+    }
+
+    @PatchMapping("/store-admin/{id}")
+    public ResponseEntity<?> updateStoreAdmin(@PathVariable UUID id, @RequestBody UpdateUserRequest request) {
+        return Response.successfulResponse(
+            "Successfully update store admin",
+            userService.updateStoreAdmin(id, request)
+        );
+    }
+}
