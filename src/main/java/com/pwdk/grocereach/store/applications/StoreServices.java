@@ -15,6 +15,7 @@ public interface StoreServices {
   StoreResponse updateStore(UUID id, UpdateStoreRequest request);
   void deleteStore(UUID id);
   StoreResponse assignManagerToStore(UUID storeId, UUID userId);
+  StoreResponse unassignManagerFromStore(UUID storeId);
   PaginatedResponse<StoreResponse> getAllStores(Pageable pageable, String search);
   StoreResponse getStoreByUser(String uuid);
   List<UniqueStore> getAllUniqueStore();
