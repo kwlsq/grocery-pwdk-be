@@ -1,0 +1,43 @@
+package com.pwdk.grocereach.inventory.applications.implementation;
+
+import com.pwdk.grocereach.common.exception.ProductNotFoundException;
+import com.pwdk.grocereach.inventory.applications.InventoryService;
+import com.pwdk.grocereach.inventory.domains.entities.Inventory;
+import com.pwdk.grocereach.inventory.infrastructures.repositories.InventoryRepository;
+import com.pwdk.grocereach.inventory.presentations.dtos.InventoryResponse;
+import com.pwdk.grocereach.product.domains.entities.Product;
+import com.pwdk.grocereach.product.infrastructures.repositories.ProductRepository;
+import com.pwdk.grocereach.store.domains.entities.Warehouse;
+import com.pwdk.grocereach.store.infrastructures.repositories.WarehouseRepository;
+import org.springframework.stereotype.Service;
+
+import java.util.UUID;
+
+@Service
+public class InventoryServiceImplementation implements InventoryService {
+
+  private final ProductRepository productRepository;
+  private final WarehouseRepository warehouseRepository;
+  private final InventoryRepository inventoryRepository;
+
+  public InventoryServiceImplementation(ProductRepository productRepository, WarehouseRepository warehouseRepository, InventoryRepository inventoryRepository) {
+    this.productRepository = productRepository;
+    this.warehouseRepository = warehouseRepository;
+    this.inventoryRepository = inventoryRepository;
+  }
+
+  @Override
+  public InventoryResponse createStockInventory(UUID warehouseID, UUID productID) {
+    Product product = productRepository.findById(productID).orElseThrow(() -> new ProductNotFoundException("Product not found!"));
+    Warehouse warehouse = warehouseRepository.findById(warehouseID).orElseThrow(() -> new ProductNotFoundException("Warehouse not found!"));
+
+    Inventory inventory = Inventory.builder()
+        .productVersion(product.getCurrentVersion())
+        .warehouse(warehouse)
+        .build();
+
+    inventoryRepository.save(inventory);
+
+    return InventoryResponse.from(inventory);
+  }
+}
