@@ -93,17 +93,20 @@ public class ProductWriteServiceImplementation implements ProductWriteService {
   }
 
   @Override
+  @Transactional
   public ProductResponse updateProduct(UUID id, UpdateProductRequest request) {
     Product currentProduct = productRepoImpl.findProductByID(id);
-
     ProductVersions currentVersion = currentProduct.getCurrentVersion();
 
+    // Update basic product info
     currentProduct.setName(request.getName() != null ? request.getName() : currentProduct.getName());
     currentProduct.setDescription(request.getDescription() != null ? request.getDescription() : currentProduct.getDescription());
 
+    // Copy only active inventories
     List<Inventory> copiedInventories = null;
     if (currentVersion.getInventories() != null) {
       copiedInventories = currentVersion.getInventories().stream()
+          .filter(inventory -> inventory.getDeletedAt() == null) // Only copy active inventories
           .map(oldInventory -> Inventory.builder()
               .stock(oldInventory.getStock())
               .journal("Version migration: " + oldInventory.getJournal().replace("Version migration: ", ""))
@@ -112,22 +115,26 @@ public class ProductWriteServiceImplementation implements ProductWriteService {
           .collect(Collectors.toList());
     }
 
-    ProductVersions newVersion = productVersionRepoImpl.buildNewProductVersion(request, currentProduct, copiedInventories, currentVersion); // Create new product version
+    // Create new version for ANY update
+    ProductVersions newVersion = productVersionRepoImpl.buildNewProductVersion(request, currentProduct, copiedInventories, currentVersion);
 
-// Set the product version reference for each copied inventory
+    // Set the product version reference for each copied inventory
     if (copiedInventories != null) {
       copiedInventories.forEach(inventory -> inventory.setProductVersion(newVersion));
     }
 
     productVersionRepository.save(newVersion);
 
-    currentVersion.setEffectiveTo(Instant.now()); //    Set effective to for unused version to now
+    // Set effective to for previous version
+    currentVersion.setEffectiveTo(Instant.now());
 
+    // Handle promotions
     if (request.getPromotions() != null) {
       Set<ProductPromotions> promotions = currentProduct.getProductPromotions();
       request.getPromotions().forEach((promotionRequest) -> {
         UUID promotionID = UUID.fromString(promotionRequest.getPromotionID());
-        Promotions promotion = promotionRepository.findById(promotionID).orElseThrow(() -> new RuntimeException("Promotion not found!"));
+        Promotions promotion = promotionRepository.findById(promotionID)
+            .orElseThrow(() -> new RuntimeException("Promotion not found!"));
         ProductPromotions productPromotion = productPromotionRepoImpl.buildNewProductPromotion(promotion, currentProduct);
         promotions.add(productPromotion);
       });
@@ -135,18 +142,18 @@ public class ProductWriteServiceImplementation implements ProductWriteService {
       productPromotionRepository.saveAll(promotions);
       currentProduct.setProductPromotions(promotions);
     }
-    currentProduct.setCurrentVersion(newVersion);
-    currentProduct.setUpdatedAt(Instant.now());
 
-//    If product's category is changed
+    // Handle category change
     if (request.getCategoryID() != null) {
-      UUID categoriUUID = UUID.fromString(request.getCategoryID());
-      ProductCategory category = productCategoryRepository.findById(categoriUUID).orElseThrow(() -> new ProductNotFoundException("Category not found!"));
-
+      UUID categoryUUID = UUID.fromString(request.getCategoryID());
+      ProductCategory category = productCategoryRepository.findById(categoryUUID)
+          .orElseThrow(() -> new ProductNotFoundException("Category not found!"));
       currentProduct.setCategory(category);
     }
 
-    productRepository.save(currentProduct); // Save updated product
+    currentProduct.setCurrentVersion(newVersion);
+    currentProduct.setUpdatedAt(Instant.now());
+    productRepository.save(currentProduct);
 
     return ProductResponse.from(currentProduct);
   }

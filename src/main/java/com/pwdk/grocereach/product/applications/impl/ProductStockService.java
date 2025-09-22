@@ -17,6 +17,7 @@ import com.pwdk.grocereach.product.infrastructures.repositories.impl.ProductVers
 import com.pwdk.grocereach.product.presentations.dtos.ProductResponse;
 import com.pwdk.grocereach.store.domains.entities.Warehouse;
 import com.pwdk.grocereach.store.infrastructures.repositories.impl.WarehouseRepoImpl;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class ProductStockService {
@@ -36,6 +37,7 @@ public class ProductStockService {
     this.warehouseRepoImpl = warehouseRepoImpl;
   }
 
+  @Transactional
   public ProductResponse updateProductStock(UUID productID, List<WarehouseStock> warehouseStocks) {
     Product product = productRepoImpl.findProductByID(productID);
     ProductVersions version = product.getCurrentVersion();
