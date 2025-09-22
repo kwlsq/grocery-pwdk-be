@@ -129,7 +129,7 @@ public class AuthServiceImpl implements AuthService {
             throw new IllegalStateException("Invalid refresh token.");
         }
 
-        UserDetails userDetails = userService.loadUserById(UUID.fromString(userId)); // Use loadUserById
+        UserDetails userDetails = userService.loadUserById(UUID.fromString(userId));
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities()
         );

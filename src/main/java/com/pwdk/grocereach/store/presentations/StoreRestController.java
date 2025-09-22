@@ -60,6 +60,24 @@ public class StoreRestController {
     return ResponseEntity.ok(storeService.assignManagerToStore(storeId, request.getUserId()));
   }
 
+  @DeleteMapping("/{storeId}/unassign-manager")
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<?> unassignManager(@PathVariable UUID storeId) {
+    try {
+      StoreResponse response = storeService.unassignManagerFromStore(storeId);
+      return Response.successfulResponse(
+              "Manager successfully unassigned from store",
+              response
+      );
+    } catch (StoreNotFoundException e) {
+      return Response.failedResponse("Store not found: " + e.getMessage());
+    } catch (IllegalStateException e) {
+      return Response.failedResponse(e.getMessage());
+    } catch (Exception e) {
+      return Response.failedResponse("Failed to unassign manager: " + e.getMessage());
+    }
+  }
+
   @GetMapping("/all")
   public ResponseEntity<?> getAllStores(@RequestParam(value = "page", defaultValue = "0") int page,
                                         @RequestParam(value = "size", defaultValue = "10") int size,
@@ -111,7 +129,7 @@ public class StoreRestController {
       case "asc", "ascending" -> Sort.Direction.ASC;
       case "desc", "descending" -> Sort.Direction.DESC;
       default -> throw new IllegalArgumentException("Invalid sort direction: " + sortDirection +
-          ". Use 'asc' or 'desc'");
+              ". Use 'asc' or 'desc'");
     };
   }
 

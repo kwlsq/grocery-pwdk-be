@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -31,8 +32,6 @@ public class StoreServiceImplementation implements StoreServices {
   private final StoresRepository storeRepository;
   private final UserRepository userRepository;
   private final StoreRepoImpl storeRepoImpl;
-
-
 
   @Override
   public StoreResponse createStore(StoreRequest request) {
@@ -63,7 +62,6 @@ public class StoreServiceImplementation implements StoreServices {
     store.setLatitude(request.getLatitude());
     store.setLongitude(request.getLongitude());
     store.setActive(request.getIsActive());
-
 
     Stores updatedStore = storeRepository.save(store);
     return new StoreResponse(updatedStore);
@@ -96,9 +94,23 @@ public class StoreServiceImplementation implements StoreServices {
     Stores updatedStore = storeRepository.save(store);
     return new StoreResponse(updatedStore);
   }
+
+  @Override
+  public StoreResponse unassignManagerFromStore(UUID storeId) {
+    Stores store = storeRepository.findById(storeId)
+            .orElseThrow(() -> new StoreNotFoundException("Store not found with ID: " + storeId));
+
+    if (store.getAdmin() == null) {
+      throw new IllegalStateException("No manager is currently assigned to this store.");
+    }
+
+    store.setAdmin(null);
+    Stores updatedStore = storeRepository.save(store);
+    return new StoreResponse(updatedStore);
+  }
+
   @Override
   public PaginatedResponse<StoreResponse> getAllStores(Pageable pageable, String search) {
-
     Page<Stores> page = storeRepository.findAll(StoreSpecification.getFilteredStore(search), pageable);
 
     List<StoreResponse> storeResponses = page.getContent().stream()
@@ -122,7 +134,6 @@ public class StoreServiceImplementation implements StoreServices {
 
     return new StoreResponse(optionalStore.get());
   }
-
 
   @Override
   public List<UniqueStore> getAllUniqueStore() {
