@@ -15,6 +15,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -69,10 +70,10 @@ public class AuthController {
             LoginResponse loginResponse = authService.login(request);
 
             ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", loginResponse.getAccessToken().getValue())
-                    .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Lax").build();
+                    .httpOnly(true).secure(false).path("/").maxAge(15*60).sameSite("Lax").build();
 
             ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
-                    .httpOnly(true).secure(false).path("/api/v1/auth").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
+                    .httpOnly(true).secure(false).path("/").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
@@ -87,24 +88,27 @@ public class AuthController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request) {
-        String refreshToken = CookieUtil.getCookieValue(request, "refreshToken")
-                .orElseThrow(() -> new IllegalArgumentException("Refresh token not found in cookie."));
+        Optional<String> refreshTokenOpt = CookieUtil.getCookieValue(request, "refreshToken");
+
+        if (refreshTokenOpt.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token not found.");
+        }
 
         try {
-            LoginResponse loginResponse = authService.refreshToken(refreshToken);
+            LoginResponse loginResponse = authService.refreshToken(refreshTokenOpt.get());
 
             ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", loginResponse.getAccessToken().getValue())
                     .httpOnly(true).secure(false).path("/").maxAge(15 * 60).sameSite("Lax").build();
 
             ResponseCookie newRefreshTokenCookie = ResponseCookie.from("refreshToken", loginResponse.getRefreshToken().getValue())
-                    .httpOnly(true).secure(false).path("/api/v1/auth").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
+                    .httpOnly(true).secure(false).path("/").maxAge(30 * 24 * 60 * 60).sameSite("Lax").build();
 
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
                     .header(HttpHeaders.SET_COOKIE, newRefreshTokenCookie.toString())
                     .body("Token refreshed successfully.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid or expired refresh token.");
         }
     }
 
@@ -114,7 +118,7 @@ public class AuthController {
         authService.logout(email);
 
         ResponseCookie accessTokenCookie = ResponseCookie.from("accessToken", "").httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax").build();
-        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "").httpOnly(true).secure(false).path("/api/auth").maxAge(0).sameSite("Lax").build();
+        ResponseCookie refreshTokenCookie = ResponseCookie.from("refreshToken", "").httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax").build();
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, accessTokenCookie.toString())
