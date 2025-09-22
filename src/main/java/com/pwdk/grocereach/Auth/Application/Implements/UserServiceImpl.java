@@ -104,8 +104,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse updateStoreAdmin(UUID userID, UpdateUserRequest request) {
         User user = userRepository.findById(userID).orElseThrow(() -> new RuntimeException("User not found!"));
-        if (request.getEmail() != null) {
-            user.setEmail(request.getEmail());
+        if (request.getName() != null) {
+            user.setFullName(request.getName());
         }
         userRepository.save(user);
         return new UserResponse(user);
