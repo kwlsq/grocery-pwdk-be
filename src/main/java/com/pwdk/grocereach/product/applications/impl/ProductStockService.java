@@ -39,6 +39,10 @@ public class ProductStockService {
 
   @Transactional
   public ProductResponse updateProductStock(UUID productID, List<WarehouseStock> warehouseStocks) {
+
+//    handle if stock is null
+//    handle if more than 1 user affect product stock
+
     Product product = productRepoImpl.findProductByID(productID);
     ProductVersions version = product.getCurrentVersion();
 
